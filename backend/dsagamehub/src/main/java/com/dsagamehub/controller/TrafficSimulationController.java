@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class TrafficSimulationController {
 
     @GetMapping
-    public ApiResponse getPage() {
-        return new ApiResponse("Traffic Simulation backend placeholder", null);
+    public void getPage() {
+        return;
     }
 }

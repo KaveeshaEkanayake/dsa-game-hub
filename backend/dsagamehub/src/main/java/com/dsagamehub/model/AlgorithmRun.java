@@ -4,69 +4,66 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "algorithm_runs")
 public class AlgorithmRun {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "algorithm_name", nullable = false)
-    private String algorithmName;
-
-    @Column(name = "result_data", columnDefinition = "TEXT")
-    private String resultData;
-
-    @Column(name = "execution_time_ms", nullable = false)
-    private Long executionTimeMs;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
-
-    @ManyToOne
-    @JoinColumn(name = "game_round_id", nullable = false)
-    private GameRound gameRound;
+    private String gameName;
+    private String algorithmType;
+    private int solutionCount;
+    private long timeTakenMs;
+    private LocalDateTime createdAt;
 
     public AlgorithmRun() {
+    }
+
+    public AlgorithmRun(String gameName, String algorithmType, int solutionCount, long timeTakenMs) {
+        this.gameName = gameName;
+        this.algorithmType = algorithmType;
+        this.solutionCount = solutionCount;
+        this.timeTakenMs = timeTakenMs;
+        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getAlgorithmName() {
-        return algorithmName;
+    public String getGameName() {
+        return gameName;
     }
 
-    public String getResultData() {
-        return resultData;
+    public void setGameName(String gameName) {
+        this.gameName = gameName;
     }
 
-    public Long getExecutionTimeMs() {
-        return executionTimeMs;
+    public String getAlgorithmType() {
+        return algorithmType;
+    }
+
+    public void setAlgorithmType(String algorithmType) {
+        this.algorithmType = algorithmType;
+    }
+
+    public int getSolutionCount() {
+        return solutionCount;
+    }
+
+    public void setSolutionCount(int solutionCount) {
+        this.solutionCount = solutionCount;
+    }
+
+    public long getTimeTakenMs() {
+        return timeTakenMs;
+    }
+
+    public void setTimeTakenMs(long timeTakenMs) {
+        this.timeTakenMs = timeTakenMs;
     }
 
     public LocalDateTime getCreatedAt() {
         return createdAt;
-    }
-
-    public GameRound getGameRound() {
-        return gameRound;
-    }
-
-    public void setAlgorithmName(String algorithmName) {
-        this.algorithmName = algorithmName;
-    }
-
-    public void setResultData(String resultData) {
-        this.resultData = resultData;
-    }
-
-    public void setExecutionTimeMs(Long executionTimeMs) {
-        this.executionTimeMs = executionTimeMs;
-    }
-
-    public void setGameRound(GameRound gameRound) {
-        this.gameRound = gameRound;
     }
 }

@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class SnakeLadderController {
 
     @GetMapping
-    public ApiResponse getPage() {
-        return new ApiResponse("Snake and Ladder backend placeholder", null);
+    public void getPage() {
+        return;
     }
 }

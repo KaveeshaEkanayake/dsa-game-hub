@@ -1,6 +1,5 @@
 package com.dsagamehub.controller;
 
-import com.dsagamehub.dto.ApiResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -10,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class MinimumCostController {
 
     @GetMapping
-    public ApiResponse getPage() {
-        return new ApiResponse("Minimum Cost backend placeholder", null);
+    public void getPage() {
+        return;
     }
 }
