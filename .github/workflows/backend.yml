@@ -8,12 +8,6 @@ on:
     paths:
       - 'backend/**'
       - '.github/workflows/backend.yml'
-  pull_request:
-    branches:
-      - development
-      - main
-    paths:
-      - 'backend/**'
 
 jobs:
   test-and-deploy:
