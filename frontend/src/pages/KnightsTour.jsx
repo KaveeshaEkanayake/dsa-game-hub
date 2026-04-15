@@ -101,6 +101,8 @@ export default function KnightsTour() {
           startRow: startPos.row,
           startCol: startPos.col,
           playerAnswer,
+          algo1TimeMs: algo1Time,
+          algo2TimeMs: algo2Time,
         }),
       });
       const data = await res.json();
@@ -224,8 +226,8 @@ export default function KnightsTour() {
             {algo1Time !== null && (
               <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: "12px", padding: "1rem", marginBottom: "1.5rem", textAlign: "left" }}>
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px", marginBottom: "8px" }}>Algorithm performance</p>
-                <p style={{ color: "#fff", fontSize: "13px" }}>Warnsdorff's: <strong>{algo1Time}ms</strong></p>
-                <p style={{ color: "#fff", fontSize: "13px" }}>Backtracking: <strong>{algo2Time}ms</strong></p>
+                <p style={{ color: "#fff", fontSize: "13px" }}>Warnsdorff's (Iterative): <strong>{algo1Time}ms</strong></p>
+                <p style={{ color: "#fff", fontSize: "13px" }}>Backtracking (Recursive): <strong>{algo2Time}ms</strong></p>
               </div>
             )}
             <div style={{ display: "flex", gap: "10px" }}>
