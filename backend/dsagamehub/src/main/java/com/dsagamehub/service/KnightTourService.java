@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.*;
 
 @Service
 public class KnightTourService {
@@ -21,17 +22,32 @@ public class KnightTourService {
         int startRow = rand.nextInt(boardSize);
         int startCol = rand.nextInt(boardSize);
 
+        // Algorithm 1 — Warnsdorff's (Iterative)
         long start1 = System.currentTimeMillis();
         List<int[]> solution1 = warnsdorff(boardSize, startRow, startCol);
         long algo1Time = System.currentTimeMillis() - start1;
 
-        long start2 = System.currentTimeMillis();
-        int[][] board2 = new int[boardSize][boardSize];
-        List<int[]> solution2 = new ArrayList<>();;
+        // Algorithm 2 — Backtracking (Recursive, 8x8 only, 5 second timeout)
+        long algo2Time = 0;
         if (boardSize == 8) {
-            backtrack(board2, startRow, startCol, 1, boardSize, solution2);
+            int[][] board2 = new int[boardSize][boardSize];
+            List<int[]> solution2 = Collections.synchronizedList(new ArrayList<>());
+            ExecutorService executor = Executors.newSingleThreadExecutor();
+            long start2 = System.currentTimeMillis();
+            Future<?> future = executor.submit(() ->
+                    backtrack(board2, startRow, startCol, 1, boardSize, solution2)
+            );
+            try {
+                future.get(5, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                future.cancel(true);
+            } catch (Exception e) {
+                // ignore
+            } finally {
+                executor.shutdownNow();
+            }
+            algo2Time = System.currentTimeMillis() - start2;
         }
-        long algo2Time = System.currentTimeMillis() - start2;
 
         Map<String, Object> response = new HashMap<>();
         response.put("startRow", startRow);
@@ -51,19 +67,29 @@ public class KnightTourService {
         int startCol = (Integer) request.get("startCol");
         String playerAnswer = (String) request.get("playerAnswer");
 
+        // Get algo times sent from frontend
+        long algo1TimeMs = 0L;
+        long algo2TimeMs = 0L;
+        if (request.get("algo1TimeMs") != null) {
+            algo1TimeMs = ((Number) request.get("algo1TimeMs")).longValue();
+        }
+        if (request.get("algo2TimeMs") != null) {
+            algo2TimeMs = ((Number) request.get("algo2TimeMs")).longValue();
+        }
+
         int correctAnswer = boardSize * boardSize;
         boolean isCorrect = playerAnswer.trim().equals(String.valueOf(correctAnswer));
 
+        // Always save to DB (both correct and incorrect) for timing data
         KnightTourResult result = new KnightTourResult();
         result.setPlayerName(playerName);
         result.setBoardSize(boardSize);
         result.setStartRow(startRow);
         result.setStartCol(startCol);
         result.setCorrect(isCorrect);
-
-        if (isCorrect) {
-            knightTourRepository.save(result);
-        }
+        result.setAlgorithm1TimeMs(algo1TimeMs);
+        result.setAlgorithm2TimeMs(algo2TimeMs);
+        knightTourRepository.save(result);
 
         Map<String, Object> response = new HashMap<>();
         response.put("correct", isCorrect);
@@ -117,6 +143,7 @@ public class KnightTourService {
     }
 
     private boolean backtrack(int[][] board, int row, int col, int moveNum, int size, List<int[]> path) {
+        if (Thread.currentThread().isInterrupted()) return false;
         board[row][col] = moveNum;
         path.add(new int[]{row, col});
         if (moveNum == size * size) return true;
