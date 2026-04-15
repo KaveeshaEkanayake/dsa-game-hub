@@ -44,6 +44,10 @@ jobs:
           distribution: 'temurin'
           cache: 'maven'
 
+      - name: Make mvnw executable
+        working-directory: backend/dsagamehub
+        run: chmod +x ./mvnw
+
       - name: Install dependencies
         working-directory: backend/dsagamehub
         run: ./mvnw dependency:resolve
