@@ -22,8 +22,8 @@ function SixteenQueens() {
   const [board, setBoard] = useState(Array(16).fill(-1));
   const [conflictCells, setConflictCells] = useState([]);
 
-  const [showCongratsPopup, setShowCongratsPopup] = useState(false);
-  const [winnerName, setWinnerName] = useState("");
+  const [showResultPopup, setShowResultPopup] = useState(false);
+  const [resultPopupData, setResultPopupData] = useState(null);
 
   function getCoord(row, col) {
     return String.fromCharCode(65 + col) + row;
@@ -138,6 +138,14 @@ function SixteenQueens() {
     updateBoardMessage(newBoard);
   }
 
+  function openResultPopup(responseData, submittedPlayerName) {
+    setResultPopupData({
+      ...responseData,
+      playerName: submittedPlayerName,
+    });
+    setShowResultPopup(true);
+  }
+
   async function loadResults() {
     try {
       const res = await api.get("/results");
@@ -205,8 +213,8 @@ function SixteenQueens() {
       setConflictCells([]);
       setSequentialResult(null);
       setThreadedResult(null);
-      setShowCongratsPopup(false);
-      setWinnerName("");
+      setShowResultPopup(false);
+      setResultPopupData(null);
       await loadAnswers();
       await loadResults();
     } catch (error) {
@@ -227,7 +235,7 @@ function SixteenQueens() {
       return;
     }
 
-    const submittedPlayerName = playerName;
+    const submittedPlayerName = playerName.trim();
 
     try {
       const res = await api.post("/submit-answer", {
@@ -236,18 +244,15 @@ function SixteenQueens() {
       });
 
       setMessage(res.data.message);
-      setIsError(false);
-
-      if (res.data.correct === true) {
-        setWinnerName(submittedPlayerName);
-        setShowCongratsPopup(true);
-      }
+      setIsError(!res.data.success);
+      openResultPopup(res.data, submittedPlayerName);
 
       setPlayerName("");
       setAnswerText("");
       setBoard(Array(16).fill(-1));
       setConflictCells([]);
       await loadAnswers();
+      await loadResults();
     } catch (error) {
       console.log(error);
       setMessage(error?.response?.data?.message || "Error submitting answer.");
@@ -285,12 +290,9 @@ function SixteenQueens() {
     <div className="page">
       <div className="game-bg"></div>
 
-      {showCongratsPopup && (
-        <div className="popup-overlay" onClick={() => setShowCongratsPopup(false)}>
-          <div
-            className="congrats-popup"
-            onClick={(e) => e.stopPropagation()}
-          >
+      {showResultPopup && resultPopupData && (
+        <div className="popup-overlay" onClick={() => setShowResultPopup(false)}>
+          <div className="congrats-popup" onClick={(e) => e.stopPropagation()}>
             <div className="confetti-layer">
               <span className="confetti c1"></span>
               <span className="confetti c2"></span>
@@ -306,27 +308,57 @@ function SixteenQueens() {
               <span className="confetti c12"></span>
             </div>
 
-            <button
-              className="popup-close-btn"
-              onClick={() => setShowCongratsPopup(false)}
-            >
+            <button className="popup-close-btn" onClick={() => setShowResultPopup(false)}>
               ×
             </button>
 
-            <div className="popup-trophy">🏆</div>
-            <div className="popup-stars">✨ 🎉 ✨</div>
+            <div className="popup-trophy">
+              {resultPopupData.correct && !resultPopupData.alreadyFound ? "🏆" : "👑"}
+            </div>
 
-            <h2>Congratulations!</h2>
-            <p className="popup-player-name">{winnerName}</p>
-            <p className="popup-text">
-              You found a correct Sixteen Queens answer!
-            </p>
+            <h2>
+              {resultPopupData.correct && !resultPopupData.alreadyFound
+                ? "Congratulations!"
+                : resultPopupData.alreadyFound
+                ? "Already Found"
+                : "Try Again"}
+            </h2>
 
-            <button
-              className="popup-action-btn"
-              onClick={() => setShowCongratsPopup(false)}
-            >
-              Awesome!
+            <p className="popup-player-name">{resultPopupData.playerName}</p>
+
+            <p className="popup-text">{resultPopupData.message}</p>
+
+            <div className="result-card" style={{ marginTop: "16px", textAlign: "left" }}>
+              <p>
+                <strong>Sequential check:</strong>{" "}
+                {resultPopupData.sequentialCheckTimeMs ?? 0} ms
+              </p>
+              <p>
+                <strong>Threaded check:</strong>{" "}
+                {resultPopupData.threadedCheckTimeMs ?? 0} ms
+              </p>
+              <p>
+                <strong>Total check time:</strong>{" "}
+                {resultPopupData.totalCheckTimeMs ?? 0} ms
+              </p>
+              <p>
+                <strong>Best algorithm:</strong>{" "}
+                {resultPopupData.bestAlgorithm || "-"}
+              </p>
+              <p>
+                <strong>Comparison:</strong>{" "}
+                {resultPopupData.comparisonMessage || "-"}
+              </p>
+              {resultPopupData.allSolutionsIdentified && (
+                <p>
+                  <strong>Round status:</strong> All solutions were identified, so the
+                  recognized flags were reset for future players.
+                </p>
+              )}
+            </div>
+
+            <button className="popup-action-btn" onClick={() => setShowResultPopup(false)}>
+              OK
             </button>
           </div>
         </div>
@@ -353,7 +385,7 @@ function SixteenQueens() {
         <div className="button-group">
           <button onClick={runSequential}>Run Sequential</button>
           <button onClick={runThreaded}>Run Threaded</button>
-          <button onClick={resetAnswers} className="danger-btn">
+          <button onClick={resetAnswers} className="danger-btn" style={{ visibility:"hidden" }}>
             Reset
           </button>
         </div>
@@ -510,7 +542,6 @@ function SixteenQueens() {
                 <tr>
                   <th>Player</th>
                   <th>Answer</th>
-                  <th>Correct</th>
                   <th>Recognized</th>
                 </tr>
               </thead>
@@ -519,7 +550,6 @@ function SixteenQueens() {
                   <tr key={a.id}>
                     <td>{a.playerName}</td>
                     <td>{a.answerText}</td>
-                    <td>{a.correct ? "Yes" : "No"}</td>
                     <td>{a.recognized ? "Yes" : "No"}</td>
                   </tr>
                 ))}
