@@ -4,81 +4,79 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "player_answers")
 public class PlayerAnswer {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "answer_data", columnDefinition = "TEXT", nullable = false)
-    private String answerData;
+    private String playerName;
 
-    @Column(name = "is_correct")
-    private Boolean isCorrect = false;
+    @Column(columnDefinition = "TEXT")
+    private String answerText;
 
-    @Column(name = "is_duplicate")
-    private Boolean isDuplicate = false;
-
-    @Column(name = "submitted_at")
-    private LocalDateTime submittedAt = LocalDateTime.now();
-
-    @ManyToOne
-    @JoinColumn(name = "player_id", nullable = false)
-    private Player player;
-
-    @ManyToOne
-    @JoinColumn(name = "game_round_id", nullable = false)
-    private GameRound gameRound;
+    private boolean correct;
+    private boolean recognized;
+    private String message;
+    private LocalDateTime submittedAt;
 
     public PlayerAnswer() {
+    }
+
+    public PlayerAnswer(String playerName, String answerText, boolean correct, boolean recognized, String message) {
+        this.playerName = playerName;
+        this.answerText = answerText;
+        this.correct = correct;
+        this.recognized = recognized;
+        this.message = message;
+        this.submittedAt = LocalDateTime.now();
     }
 
     public Long getId() {
         return id;
     }
 
-    public String getAnswerData() {
-        return answerData;
+    public String getPlayerName() {
+        return playerName;
     }
 
-    public Boolean getIsCorrect() {
-        return isCorrect;
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
     }
 
-    public Boolean getIsDuplicate() {
-        return isDuplicate;
+    public String getAnswerText() {
+        return answerText;
+    }
+
+    public void setAnswerText(String answerText) {
+        this.answerText = answerText;
+    }
+
+    public boolean isCorrect() {
+        return correct;
+    }
+
+    public void setCorrect(boolean correct) {
+        this.correct = correct;
+    }
+
+    public boolean isRecognized() {
+        return recognized;
+    }
+
+    public void setRecognized(boolean recognized) {
+        this.recognized = recognized;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 
     public LocalDateTime getSubmittedAt() {
         return submittedAt;
-    }
-
-    public Player getPlayer() {
-        return player;
-    }
-
-    public GameRound getGameRound() {
-        return gameRound;
-    }
-
-    public void setAnswerData(String answerData) {
-        this.answerData = answerData;
-    }
-
-    public void setIsCorrect(Boolean correct) {
-        isCorrect = correct;
-    }
-
-    public void setIsDuplicate(Boolean duplicate) {
-        isDuplicate = duplicate;
-    }
-
-    public void setPlayer(Player player) {
-        this.player = player;
-    }
-
-    public void setGameRound(GameRound gameRound) {
-        this.gameRound = gameRound;
     }
 }

@@ -4,32 +4,25 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "game_rounds")
 public class GameRound {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "game_name", nullable = false)
     private String gameName;
-
-    @Column(name = "round_number", nullable = false)
-    private Integer roundNumber;
-
-    @Column(name = "input_data", columnDefinition = "TEXT")
-    private String inputData;
-
-    @Column(name = "created_at")
-    private LocalDateTime createdAt = LocalDateTime.now();
+    private int roundNumber;
+    private boolean allSolutionsFound;
+    private LocalDateTime createdAt;
 
     public GameRound() {
     }
 
-    public GameRound(String gameName, Integer roundNumber, String inputData) {
+    public GameRound(String gameName, int roundNumber, boolean allSolutionsFound) {
         this.gameName = gameName;
         this.roundNumber = roundNumber;
-        this.inputData = inputData;
+        this.allSolutionsFound = allSolutionsFound;
+        this.createdAt = LocalDateTime.now();
     }
 
     public Long getId() {
@@ -40,27 +33,27 @@ public class GameRound {
         return gameName;
     }
 
-    public Integer getRoundNumber() {
-        return roundNumber;
-    }
-
-    public String getInputData() {
-        return inputData;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }
-
     public void setGameName(String gameName) {
         this.gameName = gameName;
     }
 
-    public void setRoundNumber(Integer roundNumber) {
+    public int getRoundNumber() {
+        return roundNumber;
+    }
+
+    public void setRoundNumber(int roundNumber) {
         this.roundNumber = roundNumber;
     }
 
-    public void setInputData(String inputData) {
-        this.inputData = inputData;
+    public boolean isAllSolutionsFound() {
+        return allSolutionsFound;
+    }
+
+    public void setAllSolutionsFound(boolean allSolutionsFound) {
+        this.allSolutionsFound = allSolutionsFound;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
     }
 }
