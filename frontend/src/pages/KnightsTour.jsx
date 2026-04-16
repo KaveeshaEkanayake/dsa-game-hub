@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 const BOARD_SIZES = [8, 16];
+const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 export default function KnightsTour() {
   const navigate = useNavigate();
@@ -74,7 +75,7 @@ export default function KnightsTour() {
     if (!playerName.trim()) return alert("Please enter your name!");
     setLoading(true);
     try {
-      const res = await fetch(`http://localhost:8080/api/knights-tour/generate?boardSize=${boardSize}`);
+      const res = await fetch(`${API_URL}/api/knights-tour/generate?boardSize=${boardSize}`);
       const data = await res.json();
       setStartPos({ row: data.startRow, col: data.startCol });
       setSolution(data.solution);
@@ -91,7 +92,7 @@ export default function KnightsTour() {
     if (!playerAnswer.trim()) return alert("Please enter your answer!");
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:8080/api/knights-tour/submit", {
+      const res = await fetch(`${API_URL}/api/knights-tour/submit`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -100,6 +101,8 @@ export default function KnightsTour() {
           startRow: startPos.row,
           startCol: startPos.col,
           playerAnswer,
+          algo1TimeMs: algo1Time,
+          algo2TimeMs: algo2Time,
         }),
       });
       const data = await res.json();
@@ -220,11 +223,11 @@ export default function KnightsTour() {
             <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "14px", marginBottom: "1.5rem" }}>
               {result === "win" ? `Great job, ${playerName}! Your answer has been saved.` : `Keep trying, ${playerName}! The correct answer was ${boardSize * boardSize} moves.`}
             </p>
-            {algo1Time && (
+            {algo1Time !== null && (
               <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: "12px", padding: "1rem", marginBottom: "1.5rem", textAlign: "left" }}>
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px", marginBottom: "8px" }}>Algorithm performance</p>
-                <p style={{ color: "#fff", fontSize: "13px" }}>Warnsdorff's: <strong>{algo1Time}ms</strong></p>
-                <p style={{ color: "#fff", fontSize: "13px" }}>Backtracking: <strong>{algo2Time}ms</strong></p>
+                <p style={{ color: "#fff", fontSize: "13px" }}>Warnsdorff's (Iterative): <strong>{algo1Time}ms</strong></p>
+                <p style={{ color: "#fff", fontSize: "13px" }}>Backtracking (Recursive): <strong>{algo2Time}ms</strong></p>
               </div>
             )}
             <div style={{ display: "flex", gap: "10px" }}>
