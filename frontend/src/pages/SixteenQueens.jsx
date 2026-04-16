@@ -1,13 +1,15 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "../styles/Sixteen_queen_puzzle.css";
 
 function SixteenQueens() {
+  const navigate = useNavigate();
+
   const [playerName, setPlayerName] = useState("");
   const [answerText, setAnswerText] = useState("");
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
-  const [theme, setTheme] = useState("light");
 
   const [sequentialResult, setSequentialResult] = useState(null);
   const [threadedResult, setThreadedResult] = useState(null);
@@ -19,6 +21,9 @@ function SixteenQueens() {
 
   const [board, setBoard] = useState(Array(16).fill(-1));
   const [conflictCells, setConflictCells] = useState([]);
+
+  const [showCongratsPopup, setShowCongratsPopup] = useState(false);
+  const [winnerName, setWinnerName] = useState("");
 
   function getCoord(row, col) {
     return String.fromCharCode(65 + col) + row;
@@ -91,15 +96,23 @@ function SixteenQueens() {
     if (conflicts.length > 0) {
       setMessage("Conflict found: " + conflicts.slice(0, 3).join(" | "));
       setIsError(true);
+    } else if (count < 16) {
+      setMessage("Good move. No conflicts so far.");
+      setIsError(false);
     } else {
-      setMessage("No conflicts so far.");
+      setMessage("Great! All 16 queens are placed without conflict.");
       setIsError(false);
     }
   }
 
   function handleCellClick(row, col) {
     const newBoard = [...board];
-    newBoard[row] = col;
+
+    if (newBoard[row] === col) {
+      newBoard[row] = -1;
+    } else {
+      newBoard[row] = col;
+    }
 
     setBoard(newBoard);
     setAnswerText(newBoard.join(","));
@@ -149,16 +162,16 @@ function SixteenQueens() {
     try {
       const res = await api.post("/run-sequential");
       setSequentialResult(res.data);
-      setMessage("Sequential completed");
+      setMessage("Sequential completed successfully.");
       setIsError(false);
       await loadResults();
     } catch (error) {
       console.log(error);
-      setMessage("Error running sequential");
+      setMessage("Error running sequential.");
       setIsError(true);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function runThreaded() {
@@ -167,16 +180,16 @@ function SixteenQueens() {
     try {
       const res = await api.post("/run-threaded");
       setThreadedResult(res.data);
-      setMessage("Threaded completed");
+      setMessage("Threaded completed successfully.");
       setIsError(false);
       await loadResults();
     } catch (error) {
       console.log(error);
-      setMessage("Error running threaded");
+      setMessage("Error running threaded.");
       setIsError(true);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function resetAnswers() {
@@ -184,40 +197,52 @@ function SixteenQueens() {
 
     try {
       const res = await api.post("/reset");
-      setMessage(res.data.message || "Reset completed");
+      setMessage(res.data.message || "Reset completed.");
       setIsError(false);
       setPlayerName("");
       setAnswerText("");
       setBoard(Array(16).fill(-1));
       setConflictCells([]);
+      setSequentialResult(null);
+      setThreadedResult(null);
+      setShowCongratsPopup(false);
+      setWinnerName("");
       await loadAnswers();
       await loadResults();
     } catch (error) {
       console.log(error);
-      setMessage("Error resetting answers");
+      setMessage("Error resetting answers.");
       setIsError(true);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }
 
   async function submitAnswer(e) {
     e.preventDefault();
 
     if (playerName.trim() === "" || answerText.trim() === "") {
-      setMessage("Please fill player name and answer");
+      setMessage("Please fill player name and answer.");
       setIsError(true);
       return;
     }
 
+    const submittedPlayerName = playerName;
+
     try {
       const res = await api.post("/submit-answer", {
-        playerName: playerName,
+        playerName: submittedPlayerName,
         answerText: answerText,
       });
 
       setMessage(res.data.message);
       setIsError(false);
+
+      if (res.data.correct === true) {
+        setWinnerName(submittedPlayerName);
+        setShowCongratsPopup(true);
+      }
+
       setPlayerName("");
       setAnswerText("");
       setBoard(Array(16).fill(-1));
@@ -225,52 +250,115 @@ function SixteenQueens() {
       await loadAnswers();
     } catch (error) {
       console.log(error);
-      setMessage(error?.response?.data?.message || "Error");
+      setMessage(error?.response?.data?.message || "Error submitting answer.");
       setIsError(true);
     }
   }
 
-  function toggleTheme() {
-    if (theme === "light") {
-      setTheme("dark");
-    } else {
-      setTheme("light");
-    }
-  }
-
   useEffect(() => {
-    const timer = setTimeout(() => {
-      loadResults();
-      loadAnswers();
-    }, 0);
+    let ignore = false;
 
-    return () => clearTimeout(timer);
+    async function initData() {
+      try {
+        const [resultsRes, answersRes] = await Promise.all([
+          api.get("/results"),
+          api.get("/answers"),
+        ]);
+
+        if (!ignore) {
+          setResults(resultsRes.data);
+          setAnswers(answersRes.data);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+
+    initData();
+
+    return () => {
+      ignore = true;
+    };
   }, []);
 
   return (
-    <div className={"page " + theme}>
-      <div className="top-bar">
-        <button className="theme-btn" onClick={toggleTheme}>
-          {theme === "light" ? "Dark Mode" : "Light Mode"}
-        </button>
-      </div>
+    <div className="page">
+      <div className="game-bg"></div>
+
+      {showCongratsPopup && (
+        <div className="popup-overlay" onClick={() => setShowCongratsPopup(false)}>
+          <div
+            className="congrats-popup"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="confetti-layer">
+              <span className="confetti c1"></span>
+              <span className="confetti c2"></span>
+              <span className="confetti c3"></span>
+              <span className="confetti c4"></span>
+              <span className="confetti c5"></span>
+              <span className="confetti c6"></span>
+              <span className="confetti c7"></span>
+              <span className="confetti c8"></span>
+              <span className="confetti c9"></span>
+              <span className="confetti c10"></span>
+              <span className="confetti c11"></span>
+              <span className="confetti c12"></span>
+            </div>
+
+            <button
+              className="popup-close-btn"
+              onClick={() => setShowCongratsPopup(false)}
+            >
+              ×
+            </button>
+
+            <div className="popup-trophy">🏆</div>
+            <div className="popup-stars">✨ 🎉 ✨</div>
+
+            <h2>Congratulations!</h2>
+            <p className="popup-player-name">{winnerName}</p>
+            <p className="popup-text">
+              You found a correct Sixteen Queens answer!
+            </p>
+
+            <button
+              className="popup-action-btn"
+              onClick={() => setShowCongratsPopup(false)}
+            >
+              Awesome!
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="main-box">
+        <div className="top-nav">
+          <button className="back-btn" onClick={() => navigate("/")}>
+            ← Back
+          </button>
+        </div>
+
         <div className="title-box">
-          <h1>Sixteen Queens Puzzle</h1>
-          <p>
-            Place 16 queens on the board so that no two queens attack each
-            other.
-          </p>
+          <div className="title-left">
+            <span className="game-badge">Strategy Puzzle</span>
+            <h1>Sixteen Queens Puzzle</h1>
+            <p>
+              Place 16 queens on the 16×16 board so that no two queens attack
+              each other.
+            </p>
+          </div>
         </div>
 
         <div className="button-group">
           <button onClick={runSequential}>Run Sequential</button>
           <button onClick={runThreaded}>Run Threaded</button>
-          <button onClick={resetAnswers}>Reset</button>
+          <button onClick={resetAnswers} className="danger-btn">
+            Reset
+          </button>
         </div>
 
-        {loading && <div className="loader">Running...</div>}
+        {loading && <div className="loader">Running algorithm...</div>}
 
         {message && (
           <div className={isError ? "message error" : "message success"}>
@@ -280,55 +368,68 @@ function SixteenQueens() {
 
         <div className="main-content">
           <div className="left-side">
-            <div className="board-box">
-              <div className="board-header">
-                <div className="corner-cell"></div>
-                {Array.from({ length: 16 }).map((_, col) => (
-                  <div key={col} className="header-cell">
-                    {String.fromCharCode(65 + col)}
-                  </div>
-                ))}
+            <div className="board-panel">
+              <div className="section-title">
+                <h2>Interactive Board</h2>
+                <p>Click any square to place or remove a queen.</p>
               </div>
 
-              {board.map((colValue, row) => (
-                <div key={row} className="board-row">
-                  <div className="side-label">{row}</div>
-
-                  {Array.from({ length: 16 }).map((_, col) => {
-                    const isConflict = conflictCells.includes(row + "-" + col);
-
-                    return (
-                      <div
-                        key={col}
-                        className={
-                          "cell " +
-                          ((row + col) % 2 === 0 ? "light-cell" : "dark-cell") +
-                          (isConflict ? " conflict-cell" : "")
-                        }
-                        onClick={() => handleCellClick(row, col)}
-                        title={getCoord(row, col)}
-                      >
-                        {colValue === col ? "♛" : ""}
+              <div className="board-wrapper">
+                <div className="board-box">
+                  <div className="board-header">
+                    <div className="corner-cell"></div>
+                    {Array.from({ length: 16 }).map((_, col) => (
+                      <div key={col} className="header-cell">
+                        {String.fromCharCode(65 + col)}
                       </div>
-                    );
-                  })}
-                </div>
-              ))}
-
-              <div className="board-header">
-                <div className="corner-cell"></div>
-                {Array.from({ length: 16 }).map((_, col) => (
-                  <div key={col} className="header-cell">
-                    {String.fromCharCode(65 + col)}
+                    ))}
                   </div>
-                ))}
+
+                  {board.map((colValue, row) => (
+                    <div key={row} className="board-row">
+                      <div className="side-label">{row}</div>
+
+                      {Array.from({ length: 16 }).map((_, col) => {
+                        const isConflict = conflictCells.includes(row + "-" + col);
+
+                        return (
+                          <div
+                            key={col}
+                            className={
+                              "cell " +
+                              ((row + col) % 2 === 0 ? "light-cell" : "dark-cell") +
+                              (isConflict ? " conflict-cell" : "")
+                            }
+                            onClick={() => handleCellClick(row, col)}
+                            title={getCoord(row, col)}
+                          >
+                            {colValue === col ? "♛" : ""}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ))}
+
+                  <div className="board-header">
+                    <div className="corner-cell"></div>
+                    {Array.from({ length: 16 }).map((_, col) => (
+                      <div key={col} className="header-cell">
+                        {String.fromCharCode(65 + col)}
+                      </div>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
           <div className="right-side">
             <div className="form-box">
-              <h2>Submit Answer</h2>
+              <div className="section-title">
+                <h2>Submit Your Answer</h2>
+                <p>Enter your name and 16 comma-separated values from 0 to 15.</p>
+              </div>
+
               <form onSubmit={submitAnswer}>
                 <input
                   type="text"
@@ -338,12 +439,12 @@ function SixteenQueens() {
                 />
 
                 <textarea
-                  placeholder="Type like 0,2,4,1,..."
+                  placeholder="Example: 1,3,5,7,9,11,13,15,0,2,4,6,8,10,12,14"
                   value={answerText}
                   onChange={handleAnswerTextChange}
                 ></textarea>
 
-                <button type="submit">Submit</button>
+                <button type="submit">Submit Answer</button>
               </form>
             </div>
 
@@ -351,16 +452,24 @@ function SixteenQueens() {
               {sequentialResult && (
                 <div className="result-card sequential-card">
                   <h3>Sequential Result</h3>
-                  <p>Solutions: {sequentialResult.solutionCount}</p>
-                  <p>Time: {sequentialResult.timeTakenMs} ms</p>
+                  <p>
+                    <strong>Solutions:</strong> {sequentialResult.solutionCount}
+                  </p>
+                  <p>
+                    <strong>Time:</strong> {sequentialResult.timeTakenMs} ms
+                  </p>
                 </div>
               )}
 
               {threadedResult && (
                 <div className="result-card threaded-card">
                   <h3>Threaded Result</h3>
-                  <p>Solutions: {threadedResult.solutionCount}</p>
-                  <p>Time: {threadedResult.timeTakenMs} ms</p>
+                  <p>
+                    <strong>Solutions:</strong> {threadedResult.solutionCount}
+                  </p>
+                  <p>
+                    <strong>Time:</strong> {threadedResult.timeTakenMs} ms
+                  </p>
                 </div>
               )}
             </div>
@@ -368,7 +477,7 @@ function SixteenQueens() {
         </div>
 
         <div className="table-box">
-          <h2>Runs</h2>
+          <h2>Algorithm Runs</h2>
           <div className="table-scroll">
             <table>
               <thead>
@@ -376,7 +485,7 @@ function SixteenQueens() {
                   <th>ID</th>
                   <th>Algorithm</th>
                   <th>Solutions</th>
-                  <th>Time</th>
+                  <th>Time (ms)</th>
                 </tr>
               </thead>
               <tbody>
@@ -394,7 +503,7 @@ function SixteenQueens() {
         </div>
 
         <div className="table-box">
-          <h2>Answers</h2>
+          <h2>Player Answers</h2>
           <div className="table-scroll">
             <table>
               <thead>
