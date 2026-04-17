@@ -12,7 +12,6 @@ import com.dsagamehub.repository.AlgorithmRunRepository;
 import com.dsagamehub.repository.GameRoundRepository;
 import com.dsagamehub.repository.PlayerAnswerRepository;
 import com.dsagamehub.repository.PlayerRepository;
-import jakarta.annotation.PostConstruct;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -22,6 +21,9 @@ import java.util.Optional;
 public class SixteenQueensGameService {
 
     private static final String GAME_NAME = "SIXTEEN_QUEENS";
+    private static final String SEQUENTIAL = "SEQUENTIAL";
+    private static final String THREADED = "THREADED";
+    private static final String TIE = "TIE";
 
     private final SixteenQueensSequentialService sequentialService;
     private final SixteenQueensThreadedService threadedService;
@@ -52,10 +54,10 @@ public class SixteenQueensGameService {
         long solutionCount = sequentialService.countQueens();
         long end = System.currentTimeMillis();
 
-        AlgorithmRun run = new AlgorithmRun(GAME_NAME, "SEQUENTIAL", (int) solutionCount, end - start);
+        AlgorithmRun run = new AlgorithmRun(GAME_NAME, SEQUENTIAL, (int) solutionCount, end - start);
         algorithmRunRepository.save(run);
 
-        return new AlgorithmRunResponse(GAME_NAME, "SEQUENTIAL", (int) solutionCount, end - start);
+        return new AlgorithmRunResponse(GAME_NAME, SEQUENTIAL, (int) solutionCount, end - start);
     }
 
     public AlgorithmRunResponse runThreaded() {
@@ -63,10 +65,10 @@ public class SixteenQueensGameService {
         long solutionCount = threadedService.countQueensThreaded();
         long end = System.currentTimeMillis();
 
-        AlgorithmRun run = new AlgorithmRun(GAME_NAME, "THREADED", (int) solutionCount, end - start);
+        AlgorithmRun run = new AlgorithmRun(GAME_NAME, THREADED, (int) solutionCount, end - start);
         algorithmRunRepository.save(run);
 
-        return new AlgorithmRunResponse(GAME_NAME, "THREADED", (int) solutionCount, end - start);
+        return new AlgorithmRunResponse(GAME_NAME, THREADED, (int) solutionCount, end - start);
     }
 
     public ApiResponse submitAnswer(PlayerAnswerRequest request) {
@@ -77,66 +79,133 @@ public class SixteenQueensGameService {
             throw new InvalidAnswerException("Invalid format. Enter 16 unique numbers between 0 and 15.");
         }
 
-        if (!validationService.isSelfConflictFree(normalizedAnswer)) {
-            throw new InvalidAnswerException("This answer has queen conflicts.");
-        }
+        int[] board = validationService.parseBoard(normalizedAnswer);
 
-        Optional<Player> existingPlayer = playerRepository.findByName(playerName);
-        if (existingPlayer.isEmpty()) {
-            playerRepository.save(new Player(playerName));
-        }
+        long sequentialStart = System.nanoTime();
+        boolean sequentialCorrect = sequentialService.isValidSolution(board.clone());
+        long sequentialTimeMs = nanosToMillis(System.nanoTime() - sequentialStart);
 
-        Optional<PlayerAnswer> existingCorrectAnswer =
-                playerAnswerRepository.findByAnswerTextAndCorrectTrue(normalizedAnswer);
+        long threadedStart = System.nanoTime();
+        boolean threadedCorrect = threadedService.isValidSolution(board.clone());
+        long threadedTimeMs = nanosToMillis(System.nanoTime() - threadedStart);
 
-        if (existingCorrectAnswer.isPresent() && existingCorrectAnswer.get().isRecognized()) {
-            playerAnswerRepository.save(
-                    new PlayerAnswer(playerName, normalizedAnswer, true, true, "Already recognized")
+        long totalCheckTimeMs = sequentialTimeMs + threadedTimeMs;
+        String bestAlgorithm = determineBestAlgorithm(sequentialTimeMs, threadedTimeMs);
+        String comparisonMessage = buildComparisonMessage(sequentialTimeMs, threadedTimeMs, bestAlgorithm);
+
+        ensurePlayerExists(playerName);
+
+        if (!sequentialCorrect || !threadedCorrect) {
+            return new ApiResponse(
+                    false,
+                    "Wrong answer. This queen arrangement is not a valid Sixteen Queens solution.",
+                    false,
+                    false,
+                    sequentialTimeMs,
+                    threadedTimeMs,
+                    totalCheckTimeMs,
+                    bestAlgorithm,
+                    comparisonMessage,
+                    false
             );
-            return new ApiResponse(false, "This correct solution is already recognized. Try again.");
         }
 
-        if (existingCorrectAnswer.isPresent()) {
-            playerAnswerRepository.save(
-                    new PlayerAnswer(playerName, normalizedAnswer, true, true, "Already recognized")
+        Optional<PlayerAnswer> existingRecognizedAnswer =
+                playerAnswerRepository.findByAnswerTextAndCorrectTrueAndRecognizedTrue(normalizedAnswer);
+
+        if (existingRecognizedAnswer.isPresent()) {
+            return new ApiResponse(
+                    false,
+                    "Already found. Please try again.",
+                    true,
+                    true,
+                    sequentialTimeMs,
+                    threadedTimeMs,
+                    totalCheckTimeMs,
+                    bestAlgorithm,
+                    comparisonMessage,
+                    false
             );
-            return new ApiResponse(false, "This correct solution is already recognized. Try again.");
         }
 
         playerAnswerRepository.save(
                 new PlayerAnswer(playerName, normalizedAnswer, true, true, "Correct solution")
         );
 
-        checkAndResetRecognizedAnswers();
+        boolean allSolutionsIdentified = checkAndResetRecognizedAnswers();
+        String successMessage = allSolutionsIdentified
+                ? "Congratulations! Correct answer saved. All solutions were identified, so recognized flags were reset for the next round."
+                : "Congratulations! Correct answer saved successfully.";
 
-        return new ApiResponse(true, "Correct solution submitted successfully");
+        return new ApiResponse(
+                true,
+                successMessage,
+                true,
+                false,
+                sequentialTimeMs,
+                threadedTimeMs,
+                totalCheckTimeMs,
+                bestAlgorithm,
+                comparisonMessage,
+                allSolutionsIdentified
+        );
     }
 
-    private void checkAndResetRecognizedAnswers() {
-        long totalCorrectSolutions = playerAnswerRepository.countDistinctCorrectAnswers();
-        long latestMaximumSolutions = getLatestMaximumSolutionCount();
+    private void ensurePlayerExists(String playerName) {
+        Optional<Player> existingPlayer = playerRepository.findByName(playerName);
+        if (existingPlayer.isEmpty()) {
+            playerRepository.save(new Player(playerName));
+        }
+    }
 
-        if (latestMaximumSolutions > 0 && totalCorrectSolutions >= latestMaximumSolutions) {
+    private boolean checkAndResetRecognizedAnswers() {
+        long totalRecognizedCorrectSolutions = playerAnswerRepository.countDistinctRecognizedCorrectAnswers();
+        long maximumSolutions = getMaximumSolutionCount();
+
+        if (maximumSolutions > 0 && totalRecognizedCorrectSolutions >= maximumSolutions) {
             List<PlayerAnswer> correctAnswers = playerAnswerRepository.findByCorrectTrue();
 
             for (PlayerAnswer answer : correctAnswers) {
                 answer.setRecognized(false);
-                playerAnswerRepository.save(answer);
             }
+            playerAnswerRepository.saveAll(correctAnswers);
 
             int roundNumber = (int) gameRoundRepository.count() + 1;
             gameRoundRepository.save(new GameRound(GAME_NAME, roundNumber, true));
+            return true;
         }
+
+        return false;
     }
 
-    private long getLatestMaximumSolutionCount() {
-        List<AlgorithmRun> runs = algorithmRunRepository.findByGameNameOrderByCreatedAtDesc(GAME_NAME);
+    private long getMaximumSolutionCount() {
+        return algorithmRunRepository
+                .findTopByGameNameOrderBySolutionCountDescCreatedAtDesc(GAME_NAME)
+                .map(AlgorithmRun::getSolutionCount)
+                .orElse(0);
+    }
 
-        if (runs.isEmpty()) {
-            return 0;
+    private long nanosToMillis(long nanos) {
+        return nanos / 1_000_000;
+    }
+
+    private String determineBestAlgorithm(long sequentialTimeMs, long threadedTimeMs) {
+        if (sequentialTimeMs < threadedTimeMs) {
+            return SEQUENTIAL;
+        }
+        if (threadedTimeMs < sequentialTimeMs) {
+            return THREADED;
+        }
+        return TIE;
+    }
+
+    private String buildComparisonMessage(long sequentialTimeMs, long threadedTimeMs, String bestAlgorithm) {
+        if (TIE.equals(bestAlgorithm)) {
+            return "Sequential and threaded checks performed equally for this submission.";
         }
 
-        return runs.get(0).getSolutionCount();
+        return bestAlgorithm + " was faster for this submission. Sequential: "
+                + sequentialTimeMs + " ms, Threaded: " + threadedTimeMs + " ms.";
     }
 
     public List<AlgorithmRun> getAllRuns() {
@@ -152,8 +221,8 @@ public class SixteenQueensGameService {
 
         for (PlayerAnswer answer : allAnswers) {
             answer.setRecognized(false);
-            playerAnswerRepository.save(answer);
         }
+        playerAnswerRepository.saveAll(allAnswers);
 
         return new ApiResponse(true, "All recognized flags reset successfully");
     }

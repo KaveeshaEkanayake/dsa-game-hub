@@ -12,6 +12,21 @@ public class SixteenQueensSequentialService {
         return solveRow(0, board);
     }
 
+    public boolean isValidSolution(int[] board) {
+        if (board == null || board.length != SIZE) {
+            return false;
+        }
+
+        for (int row = 0; row < SIZE; row++) {
+            int col = board[row];
+            if (col < 0 || col >= SIZE || !isSafe(row, col, board)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
     private long solveRow(int row, int[] board) {
         if (row == SIZE) {
             return 1;
