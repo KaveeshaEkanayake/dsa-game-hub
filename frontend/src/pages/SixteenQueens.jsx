@@ -375,6 +375,7 @@ function SixteenQueens() {
       }
     }
 
+
     initData();
 
     return () => {

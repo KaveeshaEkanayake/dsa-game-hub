@@ -6,7 +6,6 @@ body {
   color: #f8fafc;
 }
 
-/* PAGE */
 .page {
   min-height: 100vh;
   padding: 24px;
@@ -51,74 +50,6 @@ body {
   z-index: 0;
 }
 
-/* MOVING GALAXY BACKGROUND */
-.game-bg {
-  position: fixed;
-  inset: -20%;
-  pointer-events: none;
-  z-index: 0;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 20% 20%, rgba(59,130,246,0.1), transparent 0 18%),
-    radial-gradient(circle at 80% 25%, rgba(168,85,247,0.08), transparent 0 16%),
-    radial-gradient(circle at 50% 75%, rgba(56,189,248,0.06), transparent 0 20%);
-  animation: nebulaShift 18s ease-in-out infinite alternate;
-}
-
-.game-bg::before,
-.game-bg::after {
-  content: "";
-  position: absolute;
-  inset: -10%;
-  background-repeat: repeat;
-  pointer-events: none;
-}
-
-/* Small stars */
-.game-bg::before {
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,0.95) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgba(255,255,255,0.85) 0 1px, transparent 1.6px),
-    radial-gradient(circle, rgba(147,197,253,0.95) 0 1px, transparent 1.8px),
-    radial-gradient(circle, rgba(196,181,253,0.9) 0 1px, transparent 1.8px),
-    radial-gradient(circle, rgba(255,255,255,0.75) 0 0.8px, transparent 1.4px);
-  background-size:
-    220px 220px,
-    320px 320px,
-    420px 420px,
-    520px 520px,
-    620px 620px;
-  background-position:
-    0 0,
-    40px 120px,
-    90px 40px,
-    150px 180px,
-    200px 60px;
-  opacity: 0.7;
-  animation: starsDrift 60s linear infinite;
-}
-
-/* Larger twinkling stars */
-.game-bg::after {
-  background-image:
-    radial-gradient(circle, rgba(255,255,255,0.95) 0 1.6px, transparent 2.4px),
-    radial-gradient(circle, rgba(96,165,250,0.95) 0 1.8px, transparent 2.6px),
-    radial-gradient(circle, rgba(167,139,250,0.9) 0 1.8px, transparent 2.8px),
-    radial-gradient(circle, rgba(255,255,255,0.95) 0 1.4px, transparent 2.2px);
-  background-size:
-    480px 480px,
-    680px 680px,
-    880px 880px,
-    1080px 1080px;
-  background-position:
-    20px 40px,
-    180px 260px,
-    320px 140px,
-    460px 360px;
-  opacity: 0.45;
-  animation: starsDriftReverse 95s linear infinite, starTwinkle 4.8s ease-in-out infinite;
-}
-
 /* MAIN WRAPPER */
 .main-box {
   max-width: 1550px;
@@ -153,7 +84,6 @@ body {
   box-shadow: 0 10px 24px rgba(96, 165, 250, 0.22);
 }
 
-/* TITLE */
 .title-box {
   position: relative;
   overflow: hidden;
@@ -229,7 +159,6 @@ body {
   z-index: 2;
 }
 
-/* BUTTONS */
 .button-group {
   display: flex;
   gap: 12px;
@@ -834,43 +763,8 @@ body {
   }
 }
 
-@keyframes starsDrift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(-180px, 120px, 0) scale(1.08);
-  }
-}
 
-@keyframes starsDriftReverse {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(140px, -100px, 0) scale(1.03);
-  }
-}
 
-@keyframes starTwinkle {
-  0%, 100% {
-    opacity: 0.35;
-    filter: blur(0px);
-  }
-  50% {
-    opacity: 0.72;
-    filter: blur(0.4px);
-  }
-}
-
-@keyframes nebulaShift {
-  0% {
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  100% {
-    transform: translate3d(-2%, 1.5%, 0) scale(1.05);
-  }
-}
 
 /* RESPONSIVE */
 @media (max-width: 1200px) {
@@ -910,6 +804,7 @@ body {
   .cell {
     font-size: 18px;
   }
+
 }
 
 @media (max-width: 600px) {
