@@ -1,10 +1,13 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 import "../styles/Sixteen_queen_puzzle.css";
 
 function SixteenQueens() {
   const navigate = useNavigate();
+  const canvasRef = useRef(null);
+  const pageRef = useRef(null);
+  const mouse = useRef({ x: 0, y: 0 });
 
   const [playerName, setPlayerName] = useState("");
   const [answerText, setAnswerText] = useState("");
@@ -261,6 +264,99 @@ function SixteenQueens() {
   }
 
   useEffect(() => {
+    const canvas = canvasRef.current;
+    const page = pageRef.current;
+
+    if (!canvas || !page) return;
+
+    const ctx = canvas.getContext("2d");
+    let animId;
+    const NUM = 180;
+    const SPEED = 2.5;
+    const FOV = 300;
+    let W;
+    let H;
+    let stars = [];
+
+    function makeStar() {
+      return {
+        x: (Math.random() - 0.5) * W * 3,
+        y: (Math.random() - 0.5) * H * 3,
+        z: Math.random() * W,
+        pz: 0,
+      };
+    }
+
+    function resize() {
+      W = canvas.width = page.offsetWidth;
+      H = canvas.height = page.offsetHeight;
+    }
+
+    function init() {
+      resize();
+      stars = [];
+      for (let i = 0; i < NUM; i++) stars.push(makeStar());
+    }
+
+    function draw() {
+      ctx.fillStyle = "#050510";
+      ctx.fillRect(0, 0, W, H);
+
+      const cx = W / 2 + mouse.current.x * 30;
+      const cy = H / 2 + mouse.current.y * 20;
+
+      for (let s of stars) {
+        s.pz = s.z;
+        s.z -= SPEED;
+
+        if (s.z <= 0) {
+          Object.assign(s, makeStar());
+          s.z = W;
+          s.pz = W;
+        }
+
+        const sx = (s.x / s.z) * FOV + cx;
+        const sy = (s.y / s.z) * FOV + cy;
+        const px = (s.x / s.pz) * FOV + cx;
+        const py = (s.y / s.pz) * FOV + cy;
+        const size = Math.max(0.3, (1 - s.z / W) * 2.5);
+        const bright = Math.floor((1 - s.z / W) * 220 + 35);
+        const alpha = (1 - s.z / W) * 0.9 + 0.1;
+
+        ctx.beginPath();
+        ctx.moveTo(px, py);
+        ctx.lineTo(sx, sy);
+        ctx.strokeStyle = `rgba(${bright},${bright},${Math.min(
+          255,
+          bright + 40
+        )},${alpha})`;
+        ctx.lineWidth = size;
+        ctx.stroke();
+      }
+
+      animId = requestAnimationFrame(draw);
+    }
+
+    const handleMouseMove = (e) => {
+      const r = page.getBoundingClientRect();
+      mouse.current.x = (e.clientX - r.left - W / 2) / W;
+      mouse.current.y = (e.clientY - r.top - H / 2) / H;
+    };
+
+    init();
+    draw();
+
+    window.addEventListener("resize", init);
+    page.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener("resize", init);
+      page.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
+
+  useEffect(() => {
     let ignore = false;
 
     async function initData() {
@@ -287,8 +383,12 @@ function SixteenQueens() {
   }, []);
 
   return (
-    <div className="page">
-      <div className="game-bg"></div>
+    <div className="page" ref={pageRef}>
+      <canvas
+        ref={canvasRef}
+        className="game-bg"
+        aria-hidden="true"
+      />
 
       {showResultPopup && resultPopupData && (
         <div className="popup-overlay" onClick={() => setShowResultPopup(false)}>
@@ -385,7 +485,7 @@ function SixteenQueens() {
         <div className="button-group">
           <button onClick={runSequential}>Run Sequential</button>
           <button onClick={runThreaded}>Run Threaded</button>
-          <button onClick={resetAnswers} className="danger-btn" style={{ visibility:"hidden" }}>
+          <button onClick={resetAnswers} className="danger-btn" style={{ visibility: "hidden" }}>
             Reset
           </button>
         </div>
