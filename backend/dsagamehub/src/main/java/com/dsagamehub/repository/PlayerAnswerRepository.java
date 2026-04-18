@@ -11,8 +11,13 @@ public interface PlayerAnswerRepository extends JpaRepository<PlayerAnswer, Long
 
     Optional<PlayerAnswer> findByAnswerTextAndCorrectTrue(String answerText);
 
+    Optional<PlayerAnswer> findByAnswerTextAndCorrectTrueAndRecognizedTrue(String answerText);
+
     List<PlayerAnswer> findByCorrectTrue();
 
     @Query("SELECT COUNT(DISTINCT p.answerText) FROM PlayerAnswer p WHERE p.correct = true")
     long countDistinctCorrectAnswers();
+
+    @Query("SELECT COUNT(DISTINCT p.answerText) FROM PlayerAnswer p WHERE p.correct = true AND p.recognized = true")
+    long countDistinctRecognizedCorrectAnswers();
 }

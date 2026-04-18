@@ -43,7 +43,7 @@ public class SixteenQueensValidationService {
         return true;
     }
 
-    public boolean isSelfConflictFree(String answer) {
+    public int[] parseBoard(String answer) {
         String[] parts = answer.split(",");
         int[] board = new int[16];
 
@@ -51,16 +51,19 @@ public class SixteenQueensValidationService {
             board[i] = Integer.parseInt(parts[i]);
         }
 
+        return board;
+    }
+
+    public boolean isSelfConflictFree(String answer) {
+        int[] board = parseBoard(answer);
+
         for (int i = 0; i < 16; i++) {
             for (int j = i + 1; j < 16; j++) {
                 if (board[i] == board[j]) {
-                    System.out.println("Same column conflict: row " + i + " and row " + j);
                     return false;
                 }
 
                 if (Math.abs(board[i] - board[j]) == Math.abs(i - j)) {
-                    System.out.println("Diagonal conflict: row " + i + ", col " + board[i]
-                            + " with row " + j + ", col " + board[j]);
                     return false;
                 }
             }
