@@ -1,16 +1,30 @@
 package com.dsagamehub.controller;
 
-import com.dsagamehub.dto.ApiResponse;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import com.dsagamehub.dto.*;
+import com.dsagamehub.service.SnakeLadderService;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/snake-ladder")
+@CrossOrigin(origins = "http://localhost:5173") // Add this line
+//@CrossOrigin("*")
 public class SnakeLadderController {
 
-    @GetMapping
-    public void getPage() {
-        return;
+    private final SnakeLadderService service;
+
+    public SnakeLadderController(SnakeLadderService service) {
+        this.service = service;
+    }
+
+    // 🎮 START GAME
+    @PostMapping("/start")
+    public SnakeLadderResponse start(@RequestBody SnakeLadderRequest request) {
+        return service.startGame(request);
+    }
+
+    // 🎯 SUBMIT ANSWER (USE COMMON DTO)
+    @PostMapping("/submit")
+    public ApiResponse submit(@RequestBody PlayerAnswerRequest request) {
+        return service.submitAnswer(request);
     }
 }

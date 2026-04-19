@@ -6,19 +6,12 @@ public class ApiResponse {
     private String message;
     private boolean correct;
     private boolean alreadyFound;
-
-    private long sequentialCheckTimeNs;
-    private long threadedCheckTimeNs;
-    private long totalCheckTimeNs;
-
+    private long sequentialCheckTimeMs;
+    private long threadedCheckTimeMs;
+    private long totalCheckTimeMs;
     private String bestAlgorithm;
     private String comparisonMessage;
-
-    private int roundNumber;
-    private long recognizedSolutionCount;
-    private long targetSolutionCount;
     private boolean allSolutionsIdentified;
-    private boolean roundResetForNextCycle;
 
     public ApiResponse() {
     }
@@ -32,30 +25,22 @@ public class ApiResponse {
                        String message,
                        boolean correct,
                        boolean alreadyFound,
-                       long sequentialCheckTimeNs,
-                       long threadedCheckTimeNs,
-                       long totalCheckTimeNs,
+                       long sequentialCheckTimeMs,
+                       long threadedCheckTimeMs,
+                       long totalCheckTimeMs,
                        String bestAlgorithm,
                        String comparisonMessage,
-                       int roundNumber,
-                       long recognizedSolutionCount,
-                       long targetSolutionCount,
-                       boolean allSolutionsIdentified,
-                       boolean roundResetForNextCycle) {
+                       boolean allSolutionsIdentified) {
         this.success = success;
         this.message = message;
         this.correct = correct;
         this.alreadyFound = alreadyFound;
-        this.sequentialCheckTimeNs = sequentialCheckTimeNs;
-        this.threadedCheckTimeNs = threadedCheckTimeNs;
-        this.totalCheckTimeNs = totalCheckTimeNs;
+        this.sequentialCheckTimeMs = sequentialCheckTimeMs;
+        this.threadedCheckTimeMs = threadedCheckTimeMs;
+        this.totalCheckTimeMs = totalCheckTimeMs;
         this.bestAlgorithm = bestAlgorithm;
         this.comparisonMessage = comparisonMessage;
-        this.roundNumber = roundNumber;
-        this.recognizedSolutionCount = recognizedSolutionCount;
-        this.targetSolutionCount = targetSolutionCount;
         this.allSolutionsIdentified = allSolutionsIdentified;
-        this.roundResetForNextCycle = roundResetForNextCycle;
     }
 
     public boolean isSuccess() {
@@ -74,16 +59,16 @@ public class ApiResponse {
         return alreadyFound;
     }
 
-    public long getSequentialCheckTimeNs() {
-        return sequentialCheckTimeNs;
+    public long getSequentialCheckTimeMs() {
+        return sequentialCheckTimeMs;
     }
 
-    public long getThreadedCheckTimeNs() {
-        return threadedCheckTimeNs;
+    public long getThreadedCheckTimeMs() {
+        return threadedCheckTimeMs;
     }
 
-    public long getTotalCheckTimeNs() {
-        return totalCheckTimeNs;
+    public long getTotalCheckTimeMs() {
+        return totalCheckTimeMs;
     }
 
     public String getBestAlgorithm() {
@@ -94,23 +79,8 @@ public class ApiResponse {
         return comparisonMessage;
     }
 
-    public int getRoundNumber() {
-        return roundNumber;
-    }
-
-    public long getRecognizedSolutionCount() {
-        return recognizedSolutionCount;
-    }
-
-    public long getTargetSolutionCount() {
-        return targetSolutionCount;
-    }
-
     public boolean isAllSolutionsIdentified() {
         return allSolutionsIdentified;
     }
-
-    public boolean isRoundResetForNextCycle() {
-        return roundResetForNextCycle;
-    }
 }
+
