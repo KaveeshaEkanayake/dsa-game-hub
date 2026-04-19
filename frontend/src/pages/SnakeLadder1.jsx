@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 
 const BOARD_SIZES = [6, 7, 8, 9, 10, 11, 12];
+const API_URL = "http://localhost:8080";
 
 export default function SnakeLadderGame() {
   const navigate = useNavigate();
@@ -15,6 +16,7 @@ export default function SnakeLadderGame() {
   const [boardSize, setBoardSize] = useState(8);
   const [gameState, setGameState] = useState("setup");
   const [gameData, setGameData] = useState(null);
+  const [roundId, setRoundId] = useState(null);
   
   // Player positions - Single player only
   const [playerPosition, setPlayerPosition] = useState(1);
@@ -33,10 +35,7 @@ export default function SnakeLadderGame() {
   const [algo1Time, setAlgo1Time] = useState(null);
   const [algo2Time, setAlgo2Time] = useState(null);
   
-  // Game history
-  const [gameHistory, setGameHistory] = useState([]);
-  
-  // Board dimensions - Dynamic based on board size
+  // Board dimensions
   const [boardSizePx, setBoardSizePx] = useState(500);
 
   // Starfield Background
@@ -103,9 +102,8 @@ export default function SnakeLadderGame() {
     };
   }, []);
 
-  // Update board size dynamically - Smaller for larger boards
+  // Update board size dynamically
   useEffect(() => {
-    // Adjust canvas size based on board size to prevent overflow
     let newSize;
     if (boardSize <= 8) {
       newSize = 520;
@@ -117,101 +115,12 @@ export default function SnakeLadderGame() {
     setBoardSizePx(newSize);
   }, [boardSize]);
 
-  // Algorithm 1: BFS
-  const findMinThrowsBFS = (snakes, ladders, totalCells) => {
-    const startTime = performance.now();
-    const visited = new Array(totalCells + 1).fill(false);
-    const distance = new Array(totalCells + 1).fill(0);
-    const queue = [];
-    
-    visited[1] = true;
-    queue.push(1);
-    
-    while (queue.length > 0) {
-      const current = queue.shift();
-      for (let dice = 1; dice <= 6; dice++) {
-        let next = current + dice;
-        if (next > totalCells) continue;
-        if (snakes[next]) next = snakes[next];
-        if (ladders[next]) next = ladders[next];
-        if (!visited[next]) {
-          visited[next] = true;
-          distance[next] = distance[current] + 1;
-          queue.push(next);
-        }
-      }
-    }
-    const endTime = performance.now();
-    return { throws: distance[totalCells], time: endTime - startTime };
-  };
+  // ===============================
+  // BACKEND API CALLS
+  // ===============================
   
-  // Algorithm 2: Dynamic Programming
-  const findMinThrowsDP = (snakes, ladders, totalCells) => {
-    const startTime = performance.now();
-    const dp = new Array(totalCells + 1).fill(Infinity);
-    dp[1] = 0;
-    
-    for (let i = 1; i <= totalCells; i++) {
-      if (dp[i] === Infinity) continue;
-      for (let dice = 1; dice <= 6; dice++) {
-        let next = i + dice;
-        if (next > totalCells) continue;
-        if (snakes[next]) next = snakes[next];
-        if (ladders[next]) next = ladders[next];
-        if (dp[next] > dp[i] + 1) {
-          dp[next] = dp[i] + 1;
-        }
-      }
-    }
-    const endTime = performance.now();
-    return { throws: dp[totalCells], time: endTime - startTime };
-  };
-
-  // Generate random snakes and ladders
-  const generateRandomBoard = (size) => {
-    const totalCells = size * size;
-    const numSnakes = size - 2;
-    const numLadders = size - 2;
-    
-    const snakes = {};
-    const ladders = {};
-    const usedPositions = new Set();
-    
-    // Generate ladders
-    let laddersCreated = 0;
-    let maxAttempts = 100;
-    while (laddersCreated < numLadders && maxAttempts > 0) {
-      const bottom = Math.floor(Math.random() * (totalCells - 10)) + 2;
-      const top = bottom + Math.floor(Math.random() * (totalCells - bottom)) + 3;
-      if (top <= totalCells && !usedPositions.has(bottom) && !usedPositions.has(top) && top > bottom + 2) {
-        ladders[bottom] = top;
-        usedPositions.add(bottom);
-        usedPositions.add(top);
-        laddersCreated++;
-      }
-      maxAttempts--;
-    }
-    
-    // Generate snakes
-    let snakesCreated = 0;
-    maxAttempts = 100;
-    while (snakesCreated < numSnakes && maxAttempts > 0) {
-      const head = Math.floor(Math.random() * (totalCells - 10)) + 15;
-      const tail = head - Math.floor(Math.random() * (head - 5)) - 3;
-      if (tail >= 1 && !usedPositions.has(head) && !usedPositions.has(tail) && head > tail + 2) {
-        snakes[head] = tail;
-        usedPositions.add(head);
-        usedPositions.add(tail);
-        snakesCreated++;
-      }
-      maxAttempts--;
-    }
-    
-    return { snakes, ladders, totalCells };
-  };
-
-  // Start new game
-  const startGame = () => {
+  // Start game - Call backend API
+  const startGame = async () => {
     if (!playerName.trim()) {
       alert("Please enter your name!");
       return;
@@ -222,75 +131,130 @@ export default function SnakeLadderGame() {
     }
     
     setLoading(true);
-    
-    const { snakes, ladders, totalCells } = generateRandomBoard(boardSize);
-    const bfsResult = findMinThrowsBFS(snakes, ladders, totalCells);
-    const dpResult = findMinThrowsDP(snakes, ladders, totalCells);
-    const minThrows = Math.min(bfsResult.throws, dpResult.throws);
-    
-    setAlgo1Time(bfsResult.time);
-    setAlgo2Time(dpResult.time);
-    
-    const newGameData = {
-      boardSize: boardSize,
-      totalCells: totalCells,
-      snakes: snakes,
-      ladders: ladders,
-      minimumDiceThrows: minThrows,
-    };
-    
-    setGameData(newGameData);
-    setPlayerPosition(1);
-    setDiceValue(null);
-    setGameOver(false);
-    setWinner(null);
-    
-    const correct = minThrows;
-    let option1 = correct + Math.floor(Math.random() * 3) + 1;
-    let option2 = correct - (Math.floor(Math.random() * 2) + 1);
-    if (option2 < 1) option2 = correct + 2;
-    if (option1 === correct) option1 = correct + 1;
-    if (option2 === correct) option2 = correct - 1;
-    if (option2 < 1) option2 = correct + 1;
-    
-    setChoices([correct, option1, option2].sort(() => Math.random() - 0.5));
-    setSelectedAnswer(null);
     setResultMessage("");
     
-    setGameState("mcq");
-    setLoading(false);
+    try {
+      // Call backend /start endpoint
+      const response = await fetch(`${API_URL}/api/snake-ladder/start`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          playerName: playerName,
+          boardSize: boardSize,
+        }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      console.log("Backend response:", data);
+      
+      // Store round ID
+      setRoundId(data.roundId);
+      
+      // Parse snakes and ladders from backend
+      const snakes = data.snakes || {};
+      const ladders = data.ladders || {};
+      const totalCells = data.boardSize * data.boardSize;
+      const minThrows = data.correctAnswer;
+      const options = data.options || [];
+      
+      // Set algorithm times (if backend provides them)
+      // For now, we'll use mock times or you can add to backend response
+      setAlgo1Time(45.2); // Example - backend should send these
+      setAlgo2Time(38.7);
+      
+      const newGameData = {
+        boardSize: data.boardSize,
+        totalCells: totalCells,
+        snakes: snakes,
+        ladders: ladders,
+        minimumDiceThrows: minThrows,
+      };
+      
+      setGameData(newGameData);
+      setPlayerPosition(1);
+      setDiceValue(null);
+      setGameOver(false);
+      setWinner(null);
+      
+      // Set MCQ choices from backend
+      setChoices(options);
+      setSelectedAnswer(null);
+      
+      setGameState("mcq");
+      
+    } catch (error) {
+      console.error("Error starting game:", error);
+      setResultMessage(`❌ Failed to connect to server. Make sure backend is running on ${API_URL}`);
+    } finally {
+      setLoading(false);
+    }
   };
   
-  // Check MCQ answer
-  const checkAnswer = () => {
+  // Submit answer - Call backend API
+  const checkAnswer = async () => {
     if (!selectedAnswer) {
       setResultMessage("Please select an answer!");
       return;
     }
     
-    const isCorrect = selectedAnswer === gameData.minimumDiceThrows;
-    if (isCorrect) {
-      setResultMessage("✅ Correct! Starting game...");
-      setGameHistory(prev => [...prev, {
-        playerName, 
-        boardSize: gameData.boardSize,
-        answer: selectedAnswer, 
-        correct: true,
-        algo1TimeMs: algo1Time, 
-        algo2TimeMs: algo2Time,
-        timestamp: new Date().toISOString()
-      }]);
+    setLoading(true);
+    
+    try {
+      // Call backend /submit endpoint
+      const response = await fetch(`${API_URL}/api/snake-ladder/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          playerName: playerName,
+          answerText: selectedAnswer.toString(),
+          roundId: roundId,
+        }),
+      });
       
-      setTimeout(() => {
-        setResultMessage("");
-        setGameState("playing");
-      }, 1000);
-    } else {
-      setResultMessage(`❌ Wrong! Correct answer is ${gameData.minimumDiceThrows}. Try again!`);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      console.log("Submit response:", data);
+      
+      const isCorrect = data.correct;
+      const message = data.message || (isCorrect ? "✅ Correct! Starting game..." : `❌ Wrong! Correct answer is ${gameData?.minimumDiceThrows}`);
+      
+      setResultMessage(message);
+      
+      if (isCorrect) {
+        setTimeout(() => {
+          setResultMessage("");
+          setGameState("playing");
+        }, 1000);
+      } else {
+        // Stay in MCQ screen, let user try again
+        setTimeout(() => {
+          setResultMessage("");
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error("Error submitting answer:", error);
+      setResultMessage("❌ Failed to submit answer. Check backend connection.");
+      setTimeout(() => setResultMessage(""), 2000);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Dice roll
+  // Dice roll (local game logic - no backend needed for gameplay)
   const rollDice = () => {
     if (!gameData || gameOver || isRolling) return;
     setIsRolling(true);
@@ -352,7 +316,7 @@ export default function SnakeLadderGame() {
   };
 
   // ===============================
-  // PROFESSIONAL SNAKE DRAWING (Scaled)
+  // SNAKE DRAWING
   // ===============================
   const drawSnake = (ctx, headPos, tailPos, cellSize) => {
     const midX = (headPos.x + tailPos.x) / 2;
@@ -376,20 +340,20 @@ export default function SnakeLadderGame() {
     ctx.shadowBlur = 3;
     ctx.shadowColor = "rgba(0,0,0,0.4)";
     
-    // Snake body
-    ctx.beginPath();
-    ctx.moveTo(headPos.x, headPos.y);
-    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, tailPos.x, tailPos.y);
-    ctx.strokeStyle = "#4CAF50";
-    ctx.lineWidth = Math.max(5, cellSize * 0.11);
-    ctx.stroke();
-    
-    // Snake outline
+    // Snake body outline
     ctx.beginPath();
     ctx.moveTo(headPos.x, headPos.y);
     ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, tailPos.x, tailPos.y);
     ctx.strokeStyle = "#1B5E20";
     ctx.lineWidth = Math.max(7, cellSize * 0.13);
+    ctx.stroke();
+    
+    // Snake body main
+    ctx.beginPath();
+    ctx.moveTo(headPos.x, headPos.y);
+    ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, tailPos.x, tailPos.y);
+    ctx.strokeStyle = "#4CAF50";
+    ctx.lineWidth = Math.max(5, cellSize * 0.11);
     ctx.stroke();
     
     // Scale pattern
@@ -442,7 +406,7 @@ export default function SnakeLadderGame() {
   };
 
   // ===============================
-  // PROFESSIONAL LADDER DRAWING (Scaled)
+  // LADDER DRAWING
   // ===============================
   const drawLadder = (ctx, bottomPos, topPos, cellSize) => {
     const dx = topPos.x - bottomPos.x;
@@ -494,7 +458,7 @@ export default function SnakeLadderGame() {
     ctx.shadowBlur = 0;
   };
 
-  // Draw board with improved colors
+  // Draw board
   const drawBoard = () => {
     if (!gameData || !boardCanvasRef.current) return;
     const canvas = boardCanvasRef.current;
@@ -506,7 +470,7 @@ export default function SnakeLadderGame() {
     canvas.width = boardSizePx;
     canvas.height = boardSizePx;
     
-    // Premium dark wood background (better contrast with starfield)
+    // Premium dark wood background
     const woodGradient = ctx.createLinearGradient(0, 0, boardSizePx, boardSizePx);
     woodGradient.addColorStop(0, "#5D3A1A");
     woodGradient.addColorStop(1, "#3E2510");
@@ -518,7 +482,7 @@ export default function SnakeLadderGame() {
     ctx.lineWidth = 3;
     ctx.strokeRect(3, 3, boardSizePx - 6, boardSizePx - 6);
     
-    // Grid lines (golden, thinner for larger boards)
+    // Grid lines
     ctx.beginPath();
     ctx.strokeStyle = "#DAA520";
     ctx.lineWidth = Math.max(1.2, boardSizePx / 450);
@@ -531,7 +495,7 @@ export default function SnakeLadderGame() {
       ctx.stroke();
     }
     
-    // Cell backgrounds (rich alternating colors)
+    // Cell backgrounds
     for (let cell = 1; cell <= totalCells; cell++) {
       const pos = getPosition(cell);
       const row = Math.floor((cell - 1) / size);
@@ -549,25 +513,28 @@ export default function SnakeLadderGame() {
     }
     
     // Draw Snakes
-    for (const [head, tail] of Object.entries(gameData.snakes)) {
-      const headPos = getPosition(parseInt(head));
-      const tailPos = getPosition(tail);
-      drawSnake(ctx, headPos, tailPos, cellSize);
+    if (gameData.snakes) {
+      for (const [head, tail] of Object.entries(gameData.snakes)) {
+        const headPos = getPosition(parseInt(head));
+        const tailPos = getPosition(tail);
+        drawSnake(ctx, headPos, tailPos, cellSize);
+      }
     }
     
     // Draw Ladders
-    for (const [bottom, top] of Object.entries(gameData.ladders)) {
-      const bottomPos = getPosition(parseInt(bottom));
-      const topPos = getPosition(top);
-      drawLadder(ctx, bottomPos, topPos, cellSize);
+    if (gameData.ladders) {
+      for (const [bottom, top] of Object.entries(gameData.ladders)) {
+        const bottomPos = getPosition(parseInt(bottom));
+        const topPos = getPosition(top);
+        drawLadder(ctx, bottomPos, topPos, cellSize);
+      }
     }
     
-    // Cell numbers (scaled properly)
+    // Cell numbers
     const fontSize = Math.max(10, Math.min(20, Math.floor(cellSize * 0.28)));
     for (let cell = 1; cell <= totalCells; cell++) {
       const pos = getPosition(cell);
       
-      // Number background circle
       ctx.beginPath();
       ctx.arc(pos.x, pos.y, Math.max(7, cellSize * 0.22), 0, 2 * Math.PI);
       ctx.fillStyle = "#B22222";
@@ -576,7 +543,6 @@ export default function SnakeLadderGame() {
       ctx.lineWidth = Math.max(1, cellSize * 0.03);
       ctx.stroke();
       
-      // Number text
       ctx.font = `bold ${fontSize}px "Segoe UI", "Poppins"`;
       ctx.fillStyle = "#FFFFFF";
       ctx.textAlign = "center";
@@ -652,6 +618,7 @@ export default function SnakeLadderGame() {
   const resetGame = () => {
     setGameState("setup");
     setGameData(null);
+    setRoundId(null);
     setPlayerPosition(1);
     setDiceValue(null);
     setGameOver(false);
@@ -661,6 +628,7 @@ export default function SnakeLadderGame() {
     setPlayerName("");
     setAlgo1Time(null);
     setAlgo2Time(null);
+    setChoices([]);
   };
 
   return (
@@ -683,16 +651,30 @@ export default function SnakeLadderGame() {
           <div style={{ maxWidth: "420px", margin: "0 auto", background: "rgba(13,59,110,0.6)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "16px", padding: "1.5rem" }}>
             <div style={{ marginBottom: "1.2rem" }}>
               <label style={{ display: "block", color: "rgba(255,255,255,0.7)", fontSize: "12px", marginBottom: "6px" }}>Your Name</label>
-              <input value={playerName} onChange={e => setPlayerName(e.target.value)} placeholder="Enter your name"
-                style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: "13px", outline: "none" }} />
+              <input 
+                value={playerName} 
+                onChange={e => setPlayerName(e.target.value)} 
+                placeholder="Enter your name"
+                style={{ width: "100%", padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(255,255,255,0.2)", background: "rgba(255,255,255,0.08)", color: "#fff", fontSize: "13px", outline: "none" }} 
+              />
             </div>
             
             <div style={{ marginBottom: "1.2rem" }}>
               <label style={{ display: "block", color: "rgba(255,255,255,0.7)", fontSize: "12px", marginBottom: "6px" }}>Board Size (N × N)</label>
               <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                 {BOARD_SIZES.map(size => (
-                  <button key={size} onClick={() => setBoardSize(size)}
-                    style={{ padding: "6px 12px", borderRadius: "8px", border: `1px solid ${boardSize === size ? "#378ADD" : "rgba(255,255,255,0.2)"}`, background: boardSize === size ? "rgba(55,138,221,0.3)" : "rgba(255,255,255,0.05)", color: "#fff", cursor: "pointer", fontSize: "12px" }}>
+                  <button 
+                    key={size} 
+                    onClick={() => setBoardSize(size)}
+                    style={{ 
+                      padding: "6px 12px", 
+                      borderRadius: "8px", 
+                      border: `1px solid ${boardSize === size ? "#378ADD" : "rgba(255,255,255,0.2)"}`, 
+                      background: boardSize === size ? "rgba(55,138,221,0.3)" : "rgba(255,255,255,0.05)", 
+                      color: "#fff", 
+                      cursor: "pointer", 
+                      fontSize: "12px" 
+                    }}>
                     {size}×{size}
                   </button>
                 ))}
@@ -702,17 +684,36 @@ export default function SnakeLadderGame() {
               </p>
             </div>
             
-            <button onClick={startGame} disabled={loading}
-              style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "none", background: loading ? "#0f3a5e" : "#185FA5", color: "#fff", fontSize: "14px", fontWeight: 500, cursor: loading ? "not-allowed" : "pointer", opacity: loading ? 0.6 : 1 }}>
-              {loading ? "Generating Board..." : "🎮 Start Game"}
+            <button 
+              onClick={startGame} 
+              disabled={loading}
+              style={{ 
+                width: "100%", 
+                padding: "10px", 
+                borderRadius: "8px", 
+                border: "none", 
+                background: loading ? "#0f3a5e" : "#185FA5", 
+                color: "#fff", 
+                fontSize: "14px", 
+                fontWeight: 500, 
+                cursor: loading ? "not-allowed" : "pointer", 
+                opacity: loading ? 0.6 : 1 
+              }}>
+              {loading ? "Connecting to Server..." : "🎮 Start Game"}
             </button>
+            
+            {resultMessage && (
+              <p style={{ color: "#f87171", fontSize: "12px", textAlign: "center", marginTop: "1rem" }}>
+                {resultMessage}
+              </p>
+            )}
           </div>
         )}
         
         {/* MCQ SCREEN */}
         {gameState === "mcq" && gameData && (
           <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "1rem" }}>
-            {/* Scrollable board container for large boards */}
+            {/* Scrollable board container */}
             <div style={{ 
               maxWidth: "100%", 
               overflowX: "auto", 
@@ -735,21 +736,44 @@ export default function SnakeLadderGame() {
                 Minimum dice throws to reach cell {gameData.totalCells}?
               </p>
               <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.5)", marginBottom: "1rem" }}>
-                {gameData.boardSize}×{gameData.boardSize} | 🐍 {Object.keys(gameData.snakes).length} | 🪜 {Object.keys(gameData.ladders).length}
+                {gameData.boardSize}×{gameData.boardSize} | 🐍 {Object.keys(gameData.snakes || {}).length} | 🪜 {Object.keys(gameData.ladders || {}).length}
               </p>
               
               <div style={{ display: "flex", gap: "12px", justifyContent: "center", flexWrap: "wrap", marginBottom: "1rem" }}>
                 {choices.map((c, i) => (
-                  <button key={i} onClick={() => setSelectedAnswer(c)}
-                    style={{ background: selectedAnswer === c ? "#FFD700" : "rgba(255,255,255,0.15)", border: "none", padding: "8px 20px", borderRadius: "25px", color: selectedAnswer === c ? "#333" : "#fff", fontSize: "1rem", fontWeight: "bold", cursor: "pointer" }}>
+                  <button 
+                    key={i} 
+                    onClick={() => setSelectedAnswer(c)}
+                    style={{ 
+                      background: selectedAnswer === c ? "#FFD700" : "rgba(255,255,255,0.15)", 
+                      border: "none", 
+                      padding: "8px 20px", 
+                      borderRadius: "25px", 
+                      color: selectedAnswer === c ? "#333" : "#fff", 
+                      fontSize: "1rem", 
+                      fontWeight: "bold", 
+                      cursor: "pointer" 
+                    }}>
                     {c}
                   </button>
                 ))}
               </div>
               
-              <button onClick={checkAnswer}
-                style={{ background: "#FFD700", border: "none", padding: "8px 25px", borderRadius: "25px", fontWeight: "bold", fontSize: "0.9rem", cursor: "pointer", marginBottom: "0.8rem" }}>
-                Submit Answer
+              <button 
+                onClick={checkAnswer} 
+                disabled={loading}
+                style={{ 
+                  background: "#FFD700", 
+                  border: "none", 
+                  padding: "8px 25px", 
+                  borderRadius: "25px", 
+                  fontWeight: "bold", 
+                  fontSize: "0.9rem", 
+                  cursor: loading ? "not-allowed" : "pointer", 
+                  marginBottom: "0.8rem",
+                  opacity: loading ? 0.6 : 1
+                }}>
+                {loading ? "Submitting..." : "Submit Answer"}
               </button>
               
               {resultMessage && (
@@ -759,7 +783,7 @@ export default function SnakeLadderGame() {
               )}
               
               <div style={{ marginTop: "0.8rem", padding: "0.4rem", background: "rgba(0,0,0,0.3)", borderRadius: "8px" }}>
-                <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.5)" }}>⚡ BFS: {algo1Time?.toFixed(2)}ms | 📊 DP: {algo2Time?.toFixed(2)}ms</p>
+                <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.5)" }}>🎲 Answer correctly to start playing!</p>
               </div>
             </div>
           </div>
