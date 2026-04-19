@@ -7,7 +7,9 @@ import java.util.List;
 import java.util.Optional;
 
 public interface AlgorithmRunRepository extends JpaRepository<AlgorithmRun, Long> {
-    List<AlgorithmRun> findByGameNameOrderByCreatedAtDesc(String gameName);
+    List<AlgorithmRun> findByGameNameOrderByRoundNumberDescCreatedAtDesc(String gameName);
+
+    List<AlgorithmRun> findByGameNameAndRoundNumberOrderByCreatedAtAsc(String gameName, int roundNumber);
 
     Optional<AlgorithmRun> findTopByGameNameOrderBySolutionCountDescCreatedAtDesc(String gameName);
 }

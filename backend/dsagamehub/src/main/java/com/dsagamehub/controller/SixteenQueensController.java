@@ -2,9 +2,10 @@ package com.dsagamehub.controller;
 
 import com.dsagamehub.dto.AlgorithmRunResponse;
 import com.dsagamehub.dto.ApiResponse;
-import com.dsagamehub.dto.PlayerAnswerRequest;
 import com.dsagamehub.model.AlgorithmRun;
+import com.dsagamehub.model.GameRound;
 import com.dsagamehub.model.PlayerAnswer;
+import com.dsagamehub.dto.PlayerAnswerRequest;
 import com.dsagamehub.service.SixteenQueensGameService;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
@@ -40,6 +41,11 @@ public class SixteenQueensController {
     @GetMapping("/results")
     public List<AlgorithmRun> getResults() {
         return gameService.getAllRuns();
+    }
+
+    @GetMapping("/rounds")
+    public List<GameRound> getRounds() {
+        return gameService.getAllRounds();
     }
 
     @GetMapping("/answers")

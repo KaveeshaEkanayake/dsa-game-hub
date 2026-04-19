@@ -15,21 +15,44 @@ public class PlayerAnswer {
     @Column(columnDefinition = "TEXT")
     private String answerText;
 
-    private boolean correct;
-    private boolean recognized;
-    private String message;
+    private int roundNumber;
+
+    private long sequentialCheckTimeNs;
+    private long threadedCheckTimeNs;
+    private long totalCheckTimeNs;
+
+    private String bestAlgorithm;
+    private String comparisonMessage;
+
     private LocalDateTime submittedAt;
 
     public PlayerAnswer() {
     }
 
-    public PlayerAnswer(String playerName, String answerText, boolean correct, boolean recognized, String message) {
+    public PlayerAnswer(String playerName,
+                        String answerText,
+                        int roundNumber,
+                        long sequentialCheckTimeNs,
+                        long threadedCheckTimeNs,
+                        long totalCheckTimeNs,
+                        String bestAlgorithm,
+                        String comparisonMessage) {
         this.playerName = playerName;
         this.answerText = answerText;
-        this.correct = correct;
-        this.recognized = recognized;
-        this.message = message;
+        this.roundNumber = roundNumber;
+        this.sequentialCheckTimeNs = sequentialCheckTimeNs;
+        this.threadedCheckTimeNs = threadedCheckTimeNs;
+        this.totalCheckTimeNs = totalCheckTimeNs;
+        this.bestAlgorithm = bestAlgorithm;
+        this.comparisonMessage = comparisonMessage;
         this.submittedAt = LocalDateTime.now();
+    }
+
+    @PrePersist
+    public void onCreate() {
+        if (submittedAt == null) {
+            submittedAt = LocalDateTime.now();
+        }
     }
 
     public Long getId() {
@@ -52,31 +75,59 @@ public class PlayerAnswer {
         this.answerText = answerText;
     }
 
-    public boolean isCorrect() {
-        return correct;
+    public int getRoundNumber() {
+        return roundNumber;
     }
 
-    public void setCorrect(boolean correct) {
-        this.correct = correct;
+    public void setRoundNumber(int roundNumber) {
+        this.roundNumber = roundNumber;
     }
 
-    public boolean isRecognized() {
-        return recognized;
+    public long getSequentialCheckTimeNs() {
+        return sequentialCheckTimeNs;
     }
 
-    public void setRecognized(boolean recognized) {
-        this.recognized = recognized;
+    public void setSequentialCheckTimeNs(long sequentialCheckTimeNs) {
+        this.sequentialCheckTimeNs = sequentialCheckTimeNs;
     }
 
-    public String getMessage() {
-        return message;
+    public long getThreadedCheckTimeNs() {
+        return threadedCheckTimeNs;
     }
 
-    public void setMessage(String message) {
-        this.message = message;
+    public void setThreadedCheckTimeNs(long threadedCheckTimeNs) {
+        this.threadedCheckTimeNs = threadedCheckTimeNs;
+    }
+
+    public long getTotalCheckTimeNs() {
+        return totalCheckTimeNs;
+    }
+
+    public void setTotalCheckTimeNs(long totalCheckTimeNs) {
+        this.totalCheckTimeNs = totalCheckTimeNs;
+    }
+
+    public String getBestAlgorithm() {
+        return bestAlgorithm;
+    }
+
+    public void setBestAlgorithm(String bestAlgorithm) {
+        this.bestAlgorithm = bestAlgorithm;
+    }
+
+    public String getComparisonMessage() {
+        return comparisonMessage;
+    }
+
+    public void setComparisonMessage(String comparisonMessage) {
+        this.comparisonMessage = comparisonMessage;
     }
 
     public LocalDateTime getSubmittedAt() {
         return submittedAt;
+    }
+
+    public void setSubmittedAt(LocalDateTime submittedAt) {
+        this.submittedAt = submittedAt;
     }
 }

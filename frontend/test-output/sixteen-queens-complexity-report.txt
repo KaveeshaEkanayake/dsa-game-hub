@@ -1,0 +1,29 @@
+SIXTEEN QUEENS COMPLEXITY ANALYSIS
+==================================
+Problem Size: 16 queens on 16x16 board
+
+PROGRAM LOGIC
+-------------
+Sequential : Backtracking explores row by row in a single execution path.
+Threaded   : Backtracking work is partitioned by first-row placements and executed in parallel threads.
+
+THEORETICAL COMPLEXITY
+----------------------
+Time Complexity : Both approaches are exponential in the search space, commonly discussed as O(N!) for N-Queens style backtracking in the worst case.
+Space Complexity: Board storage plus recursion depth is O(N), excluding thread-management overhead. The threaded version also adds extra worker-thread overhead.
+
+OUTPUT-BASED ANALYSIS
+---------------------
+Total Runs                : 10
+Sequential Runs           : 5
+Threaded Runs             : 5
+Sequential Average Time   : 315227.2 ms
+Threaded Average Time     : 84893 ms
+Faster Algorithm Average  : THREADED
+Solution Count Observed   : 14772512
+Sequential Logic Stored   : Classic backtracking, row-by-row depth-first search
+Threaded Logic Stored     : Parallel backtracking by splitting the first row across worker threads
+
+CONCLUSION
+----------
+THREADED is faster on average in the recorded outputs. Sequential has lower coordination cost, while threaded can reduce elapsed time by using parallel work distribution when the machine has enough CPU capacity.
