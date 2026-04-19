@@ -1,0 +1,24 @@
+{
+  "generatedAt": "2026-04-19T13:51:23.270Z",
+  "problemSize": "16 queens on 16x16 board",
+  "programLogic": {
+    "sequential": "Backtracking explores row by row in a single execution path.",
+    "threaded": "Backtracking work is partitioned by first-row placements and executed in parallel threads."
+  },
+  "theoreticalComplexity": {
+    "time": "Both approaches are exponential in the search space, commonly discussed as O(N!) for N-Queens style backtracking in the worst case.",
+    "space": "Board storage plus recursion depth is O(N), excluding thread-management overhead. The threaded version also adds extra worker-thread overhead."
+  },
+  "outputBasedAnalysis": {
+    "totalRuns": 10,
+    "sequentialRuns": 5,
+    "threadedRuns": 5,
+    "sequentialAverageTimeMs": 315227.2,
+    "threadedAverageTimeMs": 84893,
+    "fasterAlgorithmByAverage": "THREADED",
+    "latestSequentialLogic": "Classic backtracking, row-by-row depth-first search",
+    "latestThreadedLogic": "Parallel backtracking by splitting the first row across worker threads",
+    "commonSolutionCount": 14772512
+  },
+  "conclusion": "THREADED is faster on average in the recorded outputs. Sequential has lower coordination cost, while threaded can reduce elapsed time by using parallel work distribution when the machine has enough CPU capacity."
+}

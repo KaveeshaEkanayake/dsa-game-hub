@@ -38,41 +38,29 @@ function SixteenQueens() {
 
     for (let i = 0; i < 16; i++) {
       for (let j = i + 1; j < 16; j++) {
-        if (boardArray[i] === -1 || boardArray[j] === -1) {
-          continue;
-        }
+        if (boardArray[i] === -1 || boardArray[j] === -1) continue;
 
         if (boardArray[i] === boardArray[j]) {
           conflicts.push(
-            getCoord(i, boardArray[i]) +
-              " and " +
-              getCoord(j, boardArray[j]) +
-              " are in the same column"
+            `${getCoord(i, boardArray[i])} and ${getCoord(j, boardArray[j])} are in the same column`
           );
-
-          cells.push(i + "-" + boardArray[i]);
-          cells.push(j + "-" + boardArray[j]);
+          cells.push(`${i}-${boardArray[i]}`);
+          cells.push(`${j}-${boardArray[j]}`);
         }
 
         if (Math.abs(boardArray[i] - boardArray[j]) === Math.abs(i - j)) {
           conflicts.push(
-            getCoord(i, boardArray[i]) +
-              " and " +
-              getCoord(j, boardArray[j]) +
-              " are in the same diagonal"
+            `${getCoord(i, boardArray[i])} and ${getCoord(j, boardArray[j])} are in the same diagonal`
           );
-
-          cells.push(i + "-" + boardArray[i]);
-          cells.push(j + "-" + boardArray[j]);
+          cells.push(`${i}-${boardArray[i]}`);
+          cells.push(`${j}-${boardArray[j]}`);
         }
       }
     }
 
-    const uniqueCells = [...new Set(cells)];
-
     return {
-      conflicts: conflicts,
-      cells: uniqueCells,
+      conflicts,
+      cells: [...new Set(cells)],
     };
   }
 
@@ -85,9 +73,7 @@ function SixteenQueens() {
 
     let count = 0;
     for (let i = 0; i < newBoard.length; i++) {
-      if (newBoard[i] !== -1) {
-        count++;
-      }
+      if (newBoard[i] !== -1) count++;
     }
 
     if (count === 0) {
@@ -131,7 +117,6 @@ function SixteenQueens() {
 
     for (let i = 0; i < parts.length && i < 16; i++) {
       const num = parseInt(parts[i].trim(), 10);
-
       if (!Number.isNaN(num) && num >= 0 && num <= 15) {
         newBoard[i] = num;
       }
@@ -266,7 +251,6 @@ function SixteenQueens() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const page = pageRef.current;
-
     if (!canvas || !page) return;
 
     const ctx = canvas.getContext("2d");
@@ -305,7 +289,7 @@ function SixteenQueens() {
       const cx = W / 2 + mouse.current.x * 30;
       const cy = H / 2 + mouse.current.y * 20;
 
-      for (let s of stars) {
+      for (const s of stars) {
         s.pz = s.z;
         s.z -= SPEED;
 
@@ -326,10 +310,7 @@ function SixteenQueens() {
         ctx.beginPath();
         ctx.moveTo(px, py);
         ctx.lineTo(sx, sy);
-        ctx.strokeStyle = `rgba(${bright},${bright},${Math.min(
-          255,
-          bright + 40
-        )},${alpha})`;
+        ctx.strokeStyle = `rgba(${bright},${bright},${Math.min(255, bright + 40)},${alpha})`;
         ctx.lineWidth = size;
         ctx.stroke();
       }
@@ -385,11 +366,7 @@ function SixteenQueens() {
 
   return (
     <div className="page" ref={pageRef}>
-      <canvas
-        ref={canvasRef}
-        className="game-bg"
-        aria-hidden="true"
-      />
+      <canvas ref={canvasRef} className="game-bg" aria-hidden="true" />
 
       {showResultPopup && resultPopupData && (
         <div className="popup-overlay" onClick={() => setShowResultPopup(false)}>
@@ -426,21 +403,20 @@ function SixteenQueens() {
             </h2>
 
             <p className="popup-player-name">{resultPopupData.playerName}</p>
-
             <p className="popup-text">{resultPopupData.message}</p>
 
             <div className="result-card" style={{ marginTop: "16px", textAlign: "left" }}>
               <p>
                 <strong>Sequential check:</strong>{" "}
-                {resultPopupData.sequentialCheckTimeMs ?? 0} ms
+                {resultPopupData.sequentialCheckTimeNs ?? 0} ns
               </p>
               <p>
                 <strong>Threaded check:</strong>{" "}
-                {resultPopupData.threadedCheckTimeMs ?? 0} ms
+                {resultPopupData.threadedCheckTimeNs ?? 0} ns
               </p>
               <p>
                 <strong>Total check time:</strong>{" "}
-                {resultPopupData.totalCheckTimeMs ?? 0} ms
+                {resultPopupData.totalCheckTimeNs ?? 0} ns
               </p>
               <p>
                 <strong>Best algorithm:</strong>{" "}
@@ -450,12 +426,9 @@ function SixteenQueens() {
                 <strong>Comparison:</strong>{" "}
                 {resultPopupData.comparisonMessage || "-"}
               </p>
-              {resultPopupData.allSolutionsIdentified && (
-                <p>
-                  <strong>Round status:</strong> All solutions were identified, so the
-                  recognized flags were reset for future players.
-                </p>
-              )}
+              <p>
+                <strong>Round:</strong> {resultPopupData.roundNumber ?? "-"}
+              </p>
             </div>
 
             <button className="popup-action-btn" onClick={() => setShowResultPopup(false)}>
@@ -477,8 +450,7 @@ function SixteenQueens() {
             <span className="game-badge">Strategy Puzzle</span>
             <h1>Sixteen Queens Puzzle</h1>
             <p>
-              Place 16 queens on the 16×16 board so that no two queens attack
-              each other.
+              Place 16 queens on the 16×16 board so that no two queens attack each other.
             </p>
           </div>
         </div>
@@ -523,7 +495,7 @@ function SixteenQueens() {
                       <div className="side-label">{row}</div>
 
                       {Array.from({ length: 16 }).map((_, col) => {
-                        const isConflict = conflictCells.includes(row + "-" + col);
+                        const isConflict = conflictCells.includes(`${row}-${col}`);
 
                         return (
                           <div
@@ -641,9 +613,13 @@ function SixteenQueens() {
             <table>
               <thead>
                 <tr>
-                  <th>Player</th>
-                  <th>Answer</th>
-                  <th>Recognized</th>
+                  <th>Player Name</th>
+                  <th>Answer Found</th>
+                  {/* <th>Round</th> */}
+                  {/* <th>Sequential (ns)</th> */}
+                  {/* <th>Threaded (ns)</th> */}
+                  {/* <th>Total (ns)</th> */}
+                  {/* <th>Best Algorithm</th> */}
                 </tr>
               </thead>
               <tbody>
@@ -651,7 +627,11 @@ function SixteenQueens() {
                   <tr key={a.id}>
                     <td>{a.playerName}</td>
                     <td>{a.answerText}</td>
-                    <td>{a.recognized ? "Yes" : "No"}</td>
+                    {/* <td>{a.roundNumber}</td> */}
+                    {/* <td>{a.sequentialCheckTimeNs}</td> */}
+                    {/* <td>{a.threadedCheckTimeNs}</td> */}
+                    {/* <td>{a.totalCheckTimeNs}</td> */}
+                    {/* <td>{a.bestAlgorithm}</td> */}
                   </tr>
                 ))}
               </tbody>
