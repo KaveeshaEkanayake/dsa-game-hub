@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/snake-ladder")
-@CrossOrigin("*")
+@CrossOrigin(origins = "http://localhost:5173") // Add this line
+//@CrossOrigin("*")
 public class SnakeLadderController {
 
     private final SnakeLadderService service;
