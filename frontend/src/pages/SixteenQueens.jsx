@@ -251,6 +251,7 @@ function SixteenQueens() {
   useEffect(() => {
     const canvas = canvasRef.current;
     const page = pageRef.current;
+
     if (!canvas || !page) return;
 
     const ctx = canvas.getContext("2d");
