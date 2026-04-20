@@ -1951,9 +1951,20 @@ public class SnakeLadderService {
 
 package com.dsagamehub.service;
 
-import com.dsagamehub.dto.*;
-import com.dsagamehub.model.*;
-import com.dsagamehub.repository.*;
+import com.dsagamehub.dto.ApiResponse;
+import com.dsagamehub.dto.PlayerAnswerRequest;
+import com.dsagamehub.dto.SnakeLadderRequest;
+import com.dsagamehub.dto.SnakeLadderResponse;
+import com.dsagamehub.model.AlgorithmRun;
+import com.dsagamehub.model.GameRound;
+import com.dsagamehub.model.Player;
+import com.dsagamehub.model.PlayerAnswer;
+import com.dsagamehub.model.SnakeLadderGameResult;
+import com.dsagamehub.repository.AlgorithmRunRepository;
+import com.dsagamehub.repository.GameRoundRepository;
+import com.dsagamehub.repository.PlayerAnswerRepository;
+import com.dsagamehub.repository.PlayerRepository;
+import com.dsagamehub.repository.SnakeLadderRepository;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
@@ -1964,6 +1975,8 @@ import java.util.*;
 @Service
 public class SnakeLadderService {
 
+    private static final String GAME_NAME = "SNAKE_LADDER";
+
     private final GameRoundRepository roundRepo;
     private final AlgorithmRunRepository algoRepo;
     private final SnakeLadderRepository snakeLadderResultRepo;
@@ -1971,12 +1984,8 @@ public class SnakeLadderService {
     private final PlayerAnswerRepository playerAnswerRepo;
     private final ObjectMapper objectMapper;
 
-    // Store answers per round
-    private final Map<Long, Integer> answerStore = new HashMap<>();
-    // Store board configurations per round
-    private final Map<Long, BoardConfig> boardConfigStore = new HashMap<>();
-    // Store algorithm times per round (in MICROSECONDS for better precision)
-    private final Map<Long, AlgorithmTimes> algorithmTimesStore = new HashMap<>();
+    private final Map<Integer, Integer> answerStore = new HashMap<>();
+    private final Map<Integer, BoardConfig> boardConfigStore = new HashMap<>();
 
     public SnakeLadderService(GameRoundRepository roundRepo,
                               AlgorithmRunRepository algoRepo,
@@ -1992,103 +2001,78 @@ public class SnakeLadderService {
     }
 
     private static class BoardConfig {
-        Map<Integer, Integer> snakes;
-        Map<Integer, Integer> ladders;
-        int boardSize;
+        private final Map<Integer, Integer> snakes;
+        private final Map<Integer, Integer> ladders;
+        private final int boardSize;
 
-        BoardConfig(Map<Integer, Integer> snakes, Map<Integer, Integer> ladders, int boardSize) {
+        private BoardConfig(Map<Integer, Integer> snakes, Map<Integer, Integer> ladders, int boardSize) {
             this.snakes = snakes;
             this.ladders = ladders;
             this.boardSize = boardSize;
         }
     }
 
-    private static class AlgorithmTimes {
-        long bfsTimeMicro;  // Store in microseconds for precision
-        long dpTimeMicro;
-
-        AlgorithmTimes(long bfsTimeMicro, long dpTimeMicro) {
-            this.bfsTimeMicro = bfsTimeMicro;
-            this.dpTimeMicro = dpTimeMicro;
-        }
-
-        long getBfsTimeMs() { return bfsTimeMicro / 1000; }
-        long getDpTimeMs() { return dpTimeMicro / 1000; }
-    }
-
-    // 🎮 START GAME
     public SnakeLadderResponse startGame(SnakeLadderRequest req) {
-        int N = req.getBoardSize();
+        int boardSize = req.getBoardSize();
 
-        if (N < 6 || N > 12) {
+        if (boardSize < 6 || boardSize > 12) {
             throw new IllegalArgumentException("Board size must be between 6 and 12");
         }
 
-        // Generate valid snakes and ladders (N-2 each)
-        Map<Integer, Integer> ladders = generateValidLadders(N);
-        Map<Integer, Integer> snakes = generateValidSnakes(N, ladders);
+        int nextRoundNumber = roundRepo
+                .findTopByGameNameOrderByRoundNumberDesc(GAME_NAME)
+                .map(GameRound::getRoundNumber)
+                .orElse(0) + 1;
+
+        Map<Integer, Integer> ladders = generateValidLadders(boardSize);
+        Map<Integer, Integer> snakes = generateValidSnakes(boardSize, ladders);
         validateNoConflicts(snakes, ladders);
 
-        // 🧠 Algorithm 1: BFS - Measure in nanoseconds for precision
         long bfsStart = System.nanoTime();
-        int bfsResult = bfs(N, ladders, snakes);
-        long bfsTimeNano = System.nanoTime() - bfsStart;
-        long bfsTimeMicro = bfsTimeNano / 1000;
-        long bfsTimeMs = bfsTimeNano / 1_000_000;
+        int bfsResult = bfs(boardSize, ladders, snakes);
+        long bfsTimeMs = (System.nanoTime() - bfsStart) / 1_000_000;
 
-        // 🧠 Algorithm 2: Dynamic Programming
         long dpStart = System.nanoTime();
-        int dpResult = dynamicProgramming(N, ladders, snakes);
-        long dpTimeNano = System.nanoTime() - dpStart;
-        long dpTimeMicro = dpTimeNano / 1000;
-        long dpTimeMs = dpTimeNano / 1_000_000;
-
-        System.out.println("=========================================");
-        System.out.println("Board Size: " + N);
-        System.out.println("BFS - Nanoseconds: " + bfsTimeNano + " ns, Microseconds: " + bfsTimeMicro + " μs, Milliseconds: " + bfsTimeMs + " ms");
-        System.out.println("DP  - Nanoseconds: " + dpTimeNano + " ns, Microseconds: " + dpTimeMicro + " μs, Milliseconds: " + dpTimeMs + " ms");
-        System.out.println("=========================================");
+        int dpResult = dynamicProgramming(boardSize, ladders, snakes);
+        long dpTimeMs = (System.nanoTime() - dpStart) / 1_000_000;
 
         int correctAnswer = bfsResult;
 
-        // 💾 SAVE GAME ROUND
         GameRound round = new GameRound();
-        round.setGameName("SnakeLadder");
-        round.setRoundNumber(new Random().nextInt(1000));
+        round.setGameName(GAME_NAME);
+        round.setRoundNumber(nextRoundNumber);
+        round.setStatus("ACTIVE");
         round.setAllSolutionsFound(false);
-        GameRound savedRound = roundRepo.save(round);
+        round.setTargetSolutionCount(1);
+        round.setRecognizedSolutionCount(0);
+        roundRepo.save(round);
 
-        // Store board config
-        boardConfigStore.put(savedRound.getId(), new BoardConfig(snakes, ladders, N));
-        algorithmTimesStore.put(savedRound.getId(), new AlgorithmTimes(bfsTimeMicro, dpTimeMicro));
-
-        long bfsTimeToStore = bfsTimeMicro > 0 ? bfsTimeMicro : (bfsTimeNano > 0 ? 1 : 0);
-        long dpTimeToStore = dpTimeMicro > 0 ? dpTimeMicro : (dpTimeNano > 0 ? 1 : 0);
-
-        // 📊 SAVE BFS
         AlgorithmRun bfsRun = new AlgorithmRun();
-        bfsRun.setGameRoundId(savedRound.getId());
-        bfsRun.setGameName("SnakeLadder");
+        bfsRun.setGameName(GAME_NAME);
+        bfsRun.setRoundNumber(nextRoundNumber);
         bfsRun.setAlgorithmType("BFS");
+        bfsRun.setLogicUsed("Breadth-first search");
         bfsRun.setSolutionCount(bfsResult);
-        bfsRun.setTimeTakenMs(bfsTimeToStore);
+        bfsRun.setTimeTakenMs(bfsTimeMs);
         algoRepo.save(bfsRun);
 
-        // 📊 SAVE DP
         AlgorithmRun dpRun = new AlgorithmRun();
-        dpRun.setGameRoundId(savedRound.getId());
-        dpRun.setGameName("SnakeLadder");
+        dpRun.setGameName(GAME_NAME);
+        dpRun.setRoundNumber(nextRoundNumber);
         dpRun.setAlgorithmType("DynamicProgramming");
+        dpRun.setLogicUsed("Dynamic programming");
         dpRun.setSolutionCount(dpResult);
-        dpRun.setTimeTakenMs(dpTimeToStore);
+        dpRun.setTimeTakenMs(dpTimeMs);
         algoRepo.save(dpRun);
 
-        answerStore.put(savedRound.getId(), correctAnswer);
+        answerStore.put(nextRoundNumber, correctAnswer);
+        boardConfigStore.put(nextRoundNumber, new BoardConfig(snakes, ladders, boardSize));
+
         List<Integer> options = generateOptions(correctAnswer);
 
         return new SnakeLadderResponse(
-                savedRound.getId(),
-                N,
+                round.getId(),
+                boardSize,
                 correctAnswer,
                 options,
                 snakes,
@@ -2098,209 +2082,167 @@ public class SnakeLadderService {
         );
     }
 
-    // 🎯 SUBMIT ANSWER
     public ApiResponse submitAnswer(PlayerAnswerRequest req) {
-        // Validation
         if (req.getPlayerName() == null || req.getPlayerName().trim().isEmpty()) {
             return new ApiResponse(false, "Player name is required");
         }
 
         int userAnswer;
         try {
-            userAnswer = Integer.parseInt(req.getAnswerText());
-        } catch (NumberFormatException e) {
+            userAnswer = Integer.parseInt(req.getAnswerText().trim());
+        } catch (Exception e) {
             return new ApiResponse(false, "Invalid answer format. Please enter a number.");
         }
 
-        Long roundId = req.getRoundId();
-        if (roundId == null) {
+        Optional<GameRound> latestRoundOpt = roundRepo.findTopByGameNameOrderByRoundNumberDesc(GAME_NAME);
+        if (latestRoundOpt.isEmpty()) {
             return new ApiResponse(false, "No active game round. Please start a new game.");
         }
 
-        Integer correctAnswer = answerStore.get(roundId);
-        if (correctAnswer == null) {
+        GameRound latestRound = latestRoundOpt.get();
+        int roundNumber = latestRound.getRoundNumber();
+
+        Integer correctAnswer = answerStore.get(roundNumber);
+        BoardConfig boardConfig = boardConfigStore.get(roundNumber);
+
+        if (correctAnswer == null || boardConfig == null) {
             return new ApiResponse(false, "Game round expired. Please start a new game.");
         }
 
-        // Get algorithm times from memory store
-        AlgorithmTimes times = algorithmTimesStore.get(roundId);
-        long bfsTimeMicro = 0;
-        long dpTimeMicro = 0;
+        long bfsTimeMs = 0L;
+        long dpTimeMs = 0L;
 
-        if (times != null) {
-            bfsTimeMicro = times.bfsTimeMicro;
-            dpTimeMicro = times.dpTimeMicro;
-            System.out.println("Retrieved times - BFS: " + bfsTimeMicro + " μs, DP: " + dpTimeMicro + " μs");
-        } else {
-            AlgorithmRun bfsRun = algoRepo.findByGameRoundIdAndAlgorithmType(roundId, "BFS");
-            AlgorithmRun dpRun = algoRepo.findByGameRoundIdAndAlgorithmType(roundId, "DynamicProgramming");
-            bfsTimeMicro = bfsRun != null ? bfsRun.getTimeTakenMs() : 0;
-            dpTimeMicro = dpRun != null ? dpRun.getTimeTakenMs() : 0;
-        }
-
-        long bfsTimeMs = bfsTimeMicro / 1000;
-        long dpTimeMs = dpTimeMicro / 1000;
-        long bfsTimeForDisplay = bfsTimeMs > 0 ? bfsTimeMs : (bfsTimeMicro > 0 ? 1 : 0);
-        long dpTimeForDisplay = dpTimeMs > 0 ? dpTimeMs : (dpTimeMicro > 0 ? 1 : 0);
-
-        boolean isCorrect = (userAnswer == correctAnswer);
-
-        BoardConfig boardConfig = boardConfigStore.get(roundId);
-        String boardStateJson = "";
-        if (boardConfig != null) {
-            try {
-                Map<String, Object> boardState = new HashMap<>();
-                boardState.put("snakes", boardConfig.snakes);
-                boardState.put("ladders", boardConfig.ladders);
-                boardState.put("boardSize", boardConfig.boardSize);
-                boardStateJson = objectMapper.writeValueAsString(boardState);
-            } catch (JsonProcessingException e) {
-                boardStateJson = "{}";
+        List<AlgorithmRun> runs = algoRepo.findByGameNameAndRoundNumberOrderByCreatedAtAsc(GAME_NAME, roundNumber);
+        for (AlgorithmRun run : runs) {
+            if ("BFS".equalsIgnoreCase(run.getAlgorithmType())) {
+                bfsTimeMs = run.getTimeTakenMs();
+            } else if ("DynamicProgramming".equalsIgnoreCase(run.getAlgorithmType())) {
+                dpTimeMs = run.getTimeTakenMs();
             }
         }
 
-        // ✅ SAVE PLAYER TO DATABASE (ADD THIS)
-        Optional<Player> existingPlayer = playerRepo.findByName(req.getPlayerName());
-        Player player;
-        if (existingPlayer.isPresent()) {
-            player = existingPlayer.get();
-            System.out.println("Existing player found: " + player.getName());
-        } else {
-            player = new Player(req.getPlayerName());
-            playerRepo.save(player);
-            System.out.println("New player saved: " + player.getName());
+        boolean isCorrect = userAnswer == correctAnswer;
+        String bestAlgorithm = bfsTimeMs <= dpTimeMs ? "BFS" : "DynamicProgramming";
+        String comparisonMessage = "BFS took " + bfsTimeMs + " ms, Dynamic Programming took " + dpTimeMs + " ms.";
+
+        Optional<Player> existingPlayer = playerRepo.findByName(req.getPlayerName().trim());
+        if (existingPlayer.isEmpty()) {
+            playerRepo.save(new Player(req.getPlayerName().trim()));
         }
 
-        // ✅ SAVE PLAYER ANSWER TO DATABASE (ADD THIS)
-        String answerMessage = isCorrect ? "WIN"  : "LOSE" ;
         PlayerAnswer playerAnswer = new PlayerAnswer(
-                req.getPlayerName(),
-                req.getAnswerText(),
-                isCorrect,
-                false,
-                answerMessage
+                req.getPlayerName().trim(),
+                req.getAnswerText().trim(),
+                roundNumber,
+                bfsTimeMs * 1_000_000,
+                dpTimeMs * 1_000_000,
+                (bfsTimeMs + dpTimeMs) * 1_000_000,
+                bestAlgorithm,
+                isCorrect ? "Correct Snake Ladder answer" : "Incorrect Snake Ladder answer"
         );
         playerAnswerRepo.save(playerAnswer);
-        System.out.println("Player answer saved - Player: " + req.getPlayerName() + ", Answer: " + req.getAnswerText() + ", Correct: " + isCorrect);
 
-        // Save to database when correct
         if (isCorrect) {
             SnakeLadderGameResult result = new SnakeLadderGameResult();
-            result.setPlayerName(req.getPlayerName());
-            result.setBoardSize(boardConfig != null ? boardConfig.boardSize : 8);
+            result.setPlayerName(req.getPlayerName().trim());
+            result.setBoardSize(boardConfig.boardSize);
             result.setCorrectAnswer(correctAnswer);
             result.setWin(true);
             result.setUserAnswer(userAnswer);
-            result.setBfsTimeMs(bfsTimeMicro);
-            result.setDpTimeMs(dpTimeMicro);
+            result.setBfsTimeMs(bfsTimeMs);
+            result.setDpTimeMs(dpTimeMs);
             result.setMinimumMoves(correctAnswer);
-            result.setGameRoundId(roundId);
-            result.setRoundNumber(new Random().nextInt(1000));
+            result.setGameRoundId(latestRound.getId());
+            result.setRoundNumber(roundNumber);
+            result.setPlayedAt(LocalDateTime.now());
 
-            if (boardConfig != null) {
-                try {
-                    result.setSnakesJson(objectMapper.writeValueAsString(boardConfig.snakes));
-                    result.setLaddersJson(objectMapper.writeValueAsString(boardConfig.ladders));
-                } catch (JsonProcessingException e) {
-                    result.setSnakesJson("{}");
-                    result.setLaddersJson("{}");
-                }
+            try {
+                result.setSnakesJson(objectMapper.writeValueAsString(boardConfig.snakes));
+                result.setLaddersJson(objectMapper.writeValueAsString(boardConfig.ladders));
+            } catch (JsonProcessingException e) {
+                result.setSnakesJson("{}");
+                result.setLaddersJson("{}");
             }
 
-            result.setPlayedAt(LocalDateTime.now());
             snakeLadderResultRepo.save(result);
-
-            System.out.println("Saved to DB - BFS: " + bfsTimeMicro + " μs (" + bfsTimeForDisplay + " ms), DP: " + dpTimeMicro + " μs (" + dpTimeForDisplay + " ms)");
-
-            String bestAlgorithm = bfsTimeMicro <= dpTimeMicro ? "BFS" : "Dynamic Programming";
-            String comparisonMessage = String.format("BFS took %d μs (%d ms), DP took %d μs (%d ms). %s was faster.",
-                    bfsTimeMicro, bfsTimeForDisplay, dpTimeMicro, dpTimeForDisplay, bestAlgorithm);
-
-            return new ApiResponse(
-                    true,
-                    "✅ Correct! Well done! The minimum dice throws needed is " + correctAnswer,
-                    true,
-                    false,
-                    bfsTimeForDisplay,
-                    dpTimeForDisplay,
-                    bfsTimeForDisplay + dpTimeForDisplay,
-                    bestAlgorithm,
-                    comparisonMessage,
-                    false
-            );
-        } else {
-            String bestAlgorithm = bfsTimeMicro <= dpTimeMicro ? "BFS" : "Dynamic Programming";
-            String comparisonMessage = String.format("BFS took %d μs, DP took %d μs.", bfsTimeMicro, dpTimeMicro);
-
-            return new ApiResponse(
-                    true,
-                    "❌ Incorrect! The correct answer is " + correctAnswer + ". Try again!",
-                    false,
-                    false,
-                    bfsTimeForDisplay,
-                    dpTimeForDisplay,
-                    bfsTimeForDisplay + dpTimeForDisplay,
-                    bestAlgorithm,
-                    comparisonMessage,
-                    false
-            );
         }
+
+        return new ApiResponse(
+                true,
+                isCorrect
+                        ? "✅ Correct! Well done. The minimum dice throws needed is " + correctAnswer
+                        : "❌ Incorrect! The correct answer is " + correctAnswer,
+                isCorrect,
+                false,
+                bfsTimeMs * 1_000_000,
+                dpTimeMs * 1_000_000,
+                (bfsTimeMs + dpTimeMs) * 1_000_000,
+                bestAlgorithm,
+                comparisonMessage,
+                roundNumber,
+                isCorrect ? 1 : 0,
+                1,
+                isCorrect,
+                false
+        );
     }
 
-    // ==================== VALID LADDER GENERATION ====================
-
-    private Map<Integer, Integer> generateValidLadders(int N) {
+    private Map<Integer, Integer> generateValidLadders(int n) {
         Map<Integer, Integer> ladders = new HashMap<>();
-        Random rand = new Random();
-        int totalCells = N * N;
-        int targetCount = N - 2;
+        Random random = new Random();
+        int totalCells = n * n;
+        int targetCount = n - 2;
 
         while (ladders.size() < targetCount) {
-            int bottom = rand.nextInt(totalCells - 2) + 2;
-            int top = rand.nextInt(totalCells - bottom - 1) + bottom + 1;
+            int start = random.nextInt(totalCells - 2) + 2;
+            int end = random.nextInt(totalCells - start) + start + 1;
 
-            if (bottom < top && top < totalCells && !ladders.containsKey(bottom)) {
-                ladders.put(bottom, top);
+            if (start < end && end <= totalCells - 1 && !ladders.containsKey(start)) {
+                ladders.put(start, end);
             }
         }
+
         return ladders;
     }
 
-    private Map<Integer, Integer> generateValidSnakes(int N, Map<Integer, Integer> ladders) {
+    private Map<Integer, Integer> generateValidSnakes(int n, Map<Integer, Integer> ladders) {
         Map<Integer, Integer> snakes = new HashMap<>();
-        Random rand = new Random();
-        int totalCells = N * N;
-        int targetCount = N - 2;
+        Random random = new Random();
+        int totalCells = n * n;
+        int targetCount = n - 2;
 
         while (snakes.size() < targetCount) {
-            int head = rand.nextInt(totalCells - 2) + 2;
-            int tail = rand.nextInt(head - 1) + 1;
+            int head = random.nextInt(totalCells - 2) + 2;
+            int tail = random.nextInt(head - 1) + 1;
 
-            if (head > tail && !snakes.containsKey(head) && !ladders.containsKey(head)) {
+            if (head > tail
+                    && head != totalCells
+                    && !snakes.containsKey(head)
+                    && !ladders.containsKey(head)
+                    && !ladders.containsValue(head)) {
                 snakes.put(head, tail);
             }
         }
+
         return snakes;
     }
 
     private void validateNoConflicts(Map<Integer, Integer> snakes, Map<Integer, Integer> ladders) {
-        for (int snakeHead : snakes.keySet()) {
+        for (Integer snakeHead : snakes.keySet()) {
             if (ladders.containsKey(snakeHead)) {
                 throw new IllegalStateException("Snake head cannot be at ladder bottom");
             }
         }
     }
 
-    // ==================== ALGORITHM 1: BFS ====================
-
-    private int bfs(int N, Map<Integer, Integer> ladders, Map<Integer, Integer> snakes) {
-        int totalCells = N * N;
+    private int bfs(int n, Map<Integer, Integer> ladders, Map<Integer, Integer> snakes) {
+        int totalCells = n * n;
         Queue<Integer> queue = new LinkedList<>();
         boolean[] visited = new boolean[totalCells + 1];
         int[] moves = new int[totalCells + 1];
-
         Arrays.fill(moves, -1);
-        queue.add(1);
+
+        queue.offer(1);
         visited[1] = true;
         moves[1] = 0;
 
@@ -2313,29 +2255,29 @@ public class SnakeLadderService {
 
             for (int dice = 1; dice <= 6; dice++) {
                 int next = current + dice;
+                if (next > totalCells) {
+                    continue;
+                }
 
-                if (next <= totalCells) {
-                    if (ladders.containsKey(next)) {
-                        next = ladders.get(next);
-                    } else if (snakes.containsKey(next)) {
-                        next = snakes.get(next);
-                    }
+                if (ladders.containsKey(next)) {
+                    next = ladders.get(next);
+                } else if (snakes.containsKey(next)) {
+                    next = snakes.get(next);
+                }
 
-                    if (!visited[next]) {
-                        visited[next] = true;
-                        moves[next] = moves[current] + 1;
-                        queue.add(next);
-                    }
+                if (!visited[next]) {
+                    visited[next] = true;
+                    moves[next] = moves[current] + 1;
+                    queue.offer(next);
                 }
             }
         }
+
         return -1;
     }
 
-    // ==================== ALGORITHM 2: DYNAMIC PROGRAMMING ====================
-
-    private int dynamicProgramming(int N, Map<Integer, Integer> ladders, Map<Integer, Integer> snakes) {
-        int totalCells = N * N;
+    private int dynamicProgramming(int n, Map<Integer, Integer> ladders, Map<Integer, Integer> snakes) {
+        int totalCells = n * n;
         int[] dp = new int[totalCells + 1];
         Arrays.fill(dp, Integer.MAX_VALUE);
         dp[1] = 0;
@@ -2343,15 +2285,19 @@ public class SnakeLadderService {
         boolean changed;
         int maxIterations = totalCells * 2;
 
-        for (int iter = 0; iter < maxIterations; iter++) {
+        for (int iteration = 0; iteration < maxIterations; iteration++) {
             changed = false;
 
-            for (int i = 1; i <= totalCells; i++) {
-                if (dp[i] == Integer.MAX_VALUE) continue;
+            for (int cell = 1; cell <= totalCells; cell++) {
+                if (dp[cell] == Integer.MAX_VALUE) {
+                    continue;
+                }
 
                 for (int dice = 1; dice <= 6; dice++) {
-                    int next = i + dice;
-                    if (next > totalCells) continue;
+                    int next = cell + dice;
+                    if (next > totalCells) {
+                        continue;
+                    }
 
                     int destination = next;
                     if (ladders.containsKey(next)) {
@@ -2360,43 +2306,35 @@ public class SnakeLadderService {
                         destination = snakes.get(next);
                     }
 
-                    if (dp[destination] > dp[i] + 1) {
-                        dp[destination] = dp[i] + 1;
+                    if (dp[destination] > dp[cell] + 1) {
+                        dp[destination] = dp[cell] + 1;
                         changed = true;
                     }
                 }
             }
 
-            if (!changed) break;
+            if (!changed) {
+                break;
+            }
         }
 
-        return dp[totalCells] != Integer.MAX_VALUE ? dp[totalCells] : -1;
+        return dp[totalCells] == Integer.MAX_VALUE ? -1 : dp[totalCells];
     }
 
-    // ==================== HELPER METHODS ====================
-
     private List<Integer> generateOptions(int correct) {
-        List<Integer> options = new ArrayList<>();
-        options.add(correct);
+        Set<Integer> values = new LinkedHashSet<>();
+        values.add(correct);
 
-        Random rand = new Random();
-
-        while (options.size() < 3) {
-            int offset = rand.nextInt(7) - 3;
-            int val = correct + offset;
-
-            if (val > 0 && val != correct && !options.contains(val)) {
-                options.add(val);
-            }
-
-            if (options.size() == 1 && rand.nextInt(10) > 7) {
-                options.add(correct + 2);
-            }
-            if (options.size() == 2 && rand.nextInt(10) > 7) {
-                options.add(Math.max(1, correct - 1));
+        Random random = new Random();
+        while (values.size() < 4) {
+            int offset = random.nextInt(7) - 3;
+            int option = correct + offset;
+            if (option > 0) {
+                values.add(option);
             }
         }
 
+        List<Integer> options = new ArrayList<>(values);
         Collections.shuffle(options);
         return options;
     }
