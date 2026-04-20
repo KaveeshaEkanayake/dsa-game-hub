@@ -6,13 +6,13 @@ import java.util.List;
 
 public interface SnakeLadderRepository extends JpaRepository<SnakeLadderGameResult, Long> {
 
-    // ✅ Use 'playerName' field (matches entity)
+    // Use 'playerName' field (matches entity)
     List<SnakeLadderGameResult> findByPlayerName(String playerName);
 
-    // ✅ Use 'isWin' field (matches entity)
+    // Use 'isWin' field (matches entity)
     List<SnakeLadderGameResult> findByIsWin(boolean isWin);
 
-    // ✅ Count by player name and win status
+    // Count by player name and win status
     long countByPlayerNameAndIsWin(String playerName, boolean isWin);
 }*/
 
