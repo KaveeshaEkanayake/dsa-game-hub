@@ -6,8 +6,8 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/snake-ladder")
-@CrossOrigin(origins = "http://localhost:5173") // Add this line
-//@CrossOrigin("*")
+@CrossOrigin(origins = "*")
+
 public class SnakeLadderController {
 
     private final SnakeLadderService service;
@@ -16,14 +16,13 @@ public class SnakeLadderController {
         this.service = service;
     }
 
-
     @PostMapping("/start")
-    public SnakeLadderResponse start(@RequestBody SnakeLadderRequest request) {
+    public SnakeLadderResponse startGame(@RequestBody SnakeLadderRequest request) {
         return service.startGame(request);
     }
 
     @PostMapping("/submit")
-    public ApiResponse submit(@RequestBody PlayerAnswerRequest request) {
+    public SnakeLadderApiResponse submitAnswer(@RequestBody SnakeLadderAnswerRequest request) {
         return service.submitAnswer(request);
     }
 }

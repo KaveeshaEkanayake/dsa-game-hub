@@ -10,29 +10,26 @@ public class AlgorithmRun {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // ADD THIS FIELD
-    private Long gameRoundId;  // Link to specific game round
-
     private String gameName;
+    private int roundNumber;
     private String algorithmType;
-    private int solutionCount;
+    private String logicUsed;
+    private long solutionCount;
     private long timeTakenMs;
     private LocalDateTime createdAt;
 
     public AlgorithmRun() {
     }
 
-    public AlgorithmRun(String gameName, String algorithmType, int solutionCount, long timeTakenMs) {
+    public AlgorithmRun(String gameName, int roundNumber, String algorithmType, String logicUsed, long solutionCount, long timeTakenMs) {
         this.gameName = gameName;
+        this.roundNumber = roundNumber;
         this.algorithmType = algorithmType;
+        this.logicUsed = logicUsed;
         this.solutionCount = solutionCount;
         this.timeTakenMs = timeTakenMs;
         this.createdAt = LocalDateTime.now();
     }
-
-    // ADD THIS GETTER AND SETTER
-    public Long getGameRoundId() { return gameRoundId; }
-    public void setGameRoundId(Long gameRoundId) { this.gameRoundId = gameRoundId; }
 
     public Long getId() {
         return id;
@@ -46,6 +43,14 @@ public class AlgorithmRun {
         this.gameName = gameName;
     }
 
+    public int getRoundNumber() {
+        return roundNumber;
+    }
+
+    public void setRoundNumber(int roundNumber) {
+        this.roundNumber = roundNumber;
+    }
+
     public String getAlgorithmType() {
         return algorithmType;
     }
@@ -54,11 +59,19 @@ public class AlgorithmRun {
         this.algorithmType = algorithmType;
     }
 
-    public int getSolutionCount() {
+    public String getLogicUsed() {
+        return logicUsed;
+    }
+
+    public void setLogicUsed(String logicUsed) {
+        this.logicUsed = logicUsed;
+    }
+
+    public long getSolutionCount() {
         return solutionCount;
     }
 
-    public void setSolutionCount(int solutionCount) {
+    public void setSolutionCount(long solutionCount) {
         this.solutionCount = solutionCount;
     }
 

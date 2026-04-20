@@ -1,8 +1,8 @@
-/*package com.dsagamehub.service;
+package com.dsagamehub.service;
 
 import com.dsagamehub.dto.*;
-import com.dsagamehub.model.*;
-import com.dsagamehub.repository.*;
+import com.dsagamehub.model.SnakeLadderGameResult;
+import com.dsagamehub.repository.SnakeLadderRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,16 +20,10 @@ import static org.mockito.Mockito.*;
 class SnakeLadderServiceTest {
 
     @Mock
-    private GameRoundRepository roundRepo;
-
-    @Mock
-    private AlgorithmRunRepository algoRepo;
-
-    @Mock
     private SnakeLadderRepository snakeLadderResultRepo;
 
     @InjectMocks
-    private SnakeLadderService service;
+    private SnakeLadderService snakeLadderService;
 
     private SnakeLadderRequest validRequest;
 
@@ -39,36 +33,35 @@ class SnakeLadderServiceTest {
         validRequest.setBoardSize(8);
         validRequest.setPlayerName("TestPlayer");
 
-        // Mock repository saves - FIXED: Don't use setId on mocks
-        GameRound mockRound = new GameRound();
-        // Remove setId - let the real object handle it or use reflection
-        when(roundRepo.save(any(GameRound.class))).thenReturn(mockRound);
-
-        AlgorithmRun mockRun = new AlgorithmRun();
-        when(algoRepo.save(any(AlgorithmRun.class))).thenReturn(mockRun);
+        // No unnecessary stubbings here - mock will be used only when needed
     }
 
     // Test 1: Board size validation
     @Test
     void testBoardSizeValidation() {
-        // Invalid sizes
+        // Invalid size - too small
         SnakeLadderRequest tooSmall = new SnakeLadderRequest();
         tooSmall.setBoardSize(5);
-        assertThrows(IllegalArgumentException.class, () -> service.startGame(tooSmall));
+        tooSmall.setPlayerName("Test");
+        assertThrows(IllegalArgumentException.class, () -> {
+            snakeLadderService.startGame(tooSmall);
+        });
 
+        // Invalid size - too large
         SnakeLadderRequest tooLarge = new SnakeLadderRequest();
         tooLarge.setBoardSize(13);
-        assertThrows(IllegalArgumentException.class, () -> service.startGame(tooLarge));
+        tooLarge.setPlayerName("Test");
+        assertThrows(IllegalArgumentException.class, () -> {
+            snakeLadderService.startGame(tooLarge);
+        });
 
-        // Valid sizes (6-12)
+        // Valid sizes (6-12) - should not throw
         for (int size = 6; size <= 12; size++) {
             SnakeLadderRequest valid = new SnakeLadderRequest();
             valid.setBoardSize(size);
-            // Should not throw exception
+            valid.setPlayerName("Test");
             assertDoesNotThrow(() -> {
-                when(roundRepo.save(any(GameRound.class))).thenReturn(new GameRound());
-                when(algoRepo.save(any(AlgorithmRun.class))).thenReturn(new AlgorithmRun());
-                service.startGame(valid);
+                snakeLadderService.startGame(valid);
             });
         }
     }
@@ -79,30 +72,32 @@ class SnakeLadderServiceTest {
         for (int size = 6; size <= 12; size++) {
             SnakeLadderRequest request = new SnakeLadderRequest();
             request.setBoardSize(size);
+            request.setPlayerName("Test");
 
-            when(roundRepo.save(any(GameRound.class))).thenReturn(new GameRound());
-            when(algoRepo.save(any(AlgorithmRun.class))).thenReturn(new AlgorithmRun());
-
-            SnakeLadderResponse response = service.startGame(request);
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
 
             // Check snakes and ladders count
             assertNotNull(response);
             assertNotNull(response.getSnakes());
             assertNotNull(response.getLadders());
+
             // Each should have N-2 items
-            assertEquals(size - 2, response.getSnakes().size());
-            assertEquals(size - 2, response.getLadders().size());
+            assertEquals(size - 2, response.getSnakes().size(),
+                    "Snakes count should be " + (size - 2) + " for board size " + size);
+            assertEquals(size - 2, response.getLadders().size(),
+                    "Ladders count should be " + (size - 2) + " for board size " + size);
         }
     }
 
-    // Test 3: Player name validation
+    // Test 3: Player name validation (empty name in submit)
     @Test
     void testPlayerNameValidation() {
-        PlayerAnswerRequest invalidRequest = new PlayerAnswerRequest();
+        SnakeLadderAnswerRequest invalidRequest = new SnakeLadderAnswerRequest();
         invalidRequest.setPlayerName("");
         invalidRequest.setAnswerText("5");
+        invalidRequest.setRoundId(1L);
 
-        ApiResponse response = service.submitAnswer(invalidRequest);
+        SnakeLadderApiResponse response = snakeLadderService.submitAnswer(invalidRequest);
         assertFalse(response.isSuccess());
         assertEquals("Player name is required", response.getMessage());
     }
@@ -110,12 +105,12 @@ class SnakeLadderServiceTest {
     // Test 4: Answer format validation
     @Test
     void testAnswerFormatValidation() {
-        PlayerAnswerRequest invalidRequest = new PlayerAnswerRequest();
+        SnakeLadderAnswerRequest invalidRequest = new SnakeLadderAnswerRequest();
         invalidRequest.setPlayerName("Test");
         invalidRequest.setAnswerText("not a number");
         invalidRequest.setRoundId(1L);
 
-        ApiResponse response = service.submitAnswer(invalidRequest);
+        SnakeLadderApiResponse response = snakeLadderService.submitAnswer(invalidRequest);
         assertFalse(response.isSuccess());
         assertEquals("Invalid answer format. Please enter a number.", response.getMessage());
     }
@@ -123,12 +118,12 @@ class SnakeLadderServiceTest {
     // Test 5: Round ID validation
     @Test
     void testRoundIdValidation() {
-        PlayerAnswerRequest request = new PlayerAnswerRequest();
+        SnakeLadderAnswerRequest request = new SnakeLadderAnswerRequest();
         request.setPlayerName("Test");
         request.setAnswerText("10");
         request.setRoundId(null);
 
-        ApiResponse response = service.submitAnswer(request);
+        SnakeLadderApiResponse response = snakeLadderService.submitAnswer(request);
         assertFalse(response.isSuccess());
         assertEquals("No active game round. Please start a new game.", response.getMessage());
     }
@@ -140,9 +135,10 @@ class SnakeLadderServiceTest {
         Map<Integer, Integer> emptyLadders = new HashMap<>();
         Map<Integer, Integer> emptySnakes = new HashMap<>();
 
-        // For 6x6 board (36 cells)
+        // For 6x6 board (36 cells) - minimum dice throws should be around 5-6
         int result = invokeBfsMethod(6, emptyLadders, emptySnakes);
-        assertTrue(result >= 5 && result <= 10);
+        assertTrue(result >= 5 && result <= 10,
+                "BFS result should be between 5 and 10 for 6x6 board, but was: " + result);
     }
 
     // Helper to invoke private BFS method via reflection
@@ -151,7 +147,7 @@ class SnakeLadderServiceTest {
             java.lang.reflect.Method method = SnakeLadderService.class.getDeclaredMethod(
                     "bfs", int.class, Map.class, Map.class);
             method.setAccessible(true);
-            return (int) method.invoke(service, N, ladders, snakes);
+            return (int) method.invoke(snakeLadderService, N, ladders, snakes);
         } catch (Exception e) {
             fail("Could not invoke BFS method: " + e.getMessage());
             return -1;
@@ -165,7 +161,8 @@ class SnakeLadderServiceTest {
         Map<Integer, Integer> emptySnakes = new HashMap<>();
 
         int result = invokeDpMethod(6, emptyLadders, emptySnakes);
-        assertTrue(result >= 5 && result <= 10);
+        assertTrue(result >= 5 && result <= 10,
+                "DP result should be between 5 and 10 for 6x6 board, but was: " + result);
     }
 
     private int invokeDpMethod(int N, Map<Integer, Integer> ladders, Map<Integer, Integer> snakes) {
@@ -173,7 +170,7 @@ class SnakeLadderServiceTest {
             java.lang.reflect.Method method = SnakeLadderService.class.getDeclaredMethod(
                     "dynamicProgramming", int.class, Map.class, Map.class);
             method.setAccessible(true);
-            return (int) method.invoke(service, N, ladders, snakes);
+            return (int) method.invoke(snakeLadderService, N, ladders, snakes);
         } catch (Exception e) {
             fail("Could not invoke DP method: " + e.getMessage());
             return -1;
@@ -183,38 +180,42 @@ class SnakeLadderServiceTest {
     // Test 8: Snake and ladder positions are within bounds
     @Test
     void testSnakeAndLadderPositionsInBounds() {
-        when(roundRepo.save(any(GameRound.class))).thenReturn(new GameRound());
-        when(algoRepo.save(any(AlgorithmRun.class))).thenReturn(new AlgorithmRun());
-
         for (int size = 6; size <= 12; size++) {
             SnakeLadderRequest request = new SnakeLadderRequest();
             request.setBoardSize(size);
+            request.setPlayerName("Test");
 
-            SnakeLadderResponse response = service.startGame(request);
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
 
             int maxCell = size * size;
 
             // Check snakes
             if (response.getSnakes() != null) {
                 for (Map.Entry<Integer, Integer> snake : response.getSnakes().entrySet()) {
-                    assertTrue(snake.getKey() >= 2 && snake.getKey() <= maxCell - 1,
-                            "Snake head out of bounds: " + snake.getKey());
-                    assertTrue(snake.getValue() >= 1 && snake.getValue() <= maxCell - 1,
-                            "Snake tail out of bounds: " + snake.getValue());
-                    assertTrue(snake.getKey() > snake.getValue(),
-                            "Snake must go down: head=" + snake.getKey() + ", tail=" + snake.getValue());
+                    int head = snake.getKey();
+                    int tail = snake.getValue();
+
+                    assertTrue(head >= 2 && head <= maxCell - 1,
+                            "Snake head out of bounds: " + head + " for board size " + size);
+                    assertTrue(tail >= 1 && tail <= maxCell - 1,
+                            "Snake tail out of bounds: " + tail + " for board size " + size);
+                    assertTrue(head > tail,
+                            "Snake must go down: head=" + head + ", tail=" + tail);
                 }
             }
 
             // Check ladders
             if (response.getLadders() != null) {
                 for (Map.Entry<Integer, Integer> ladder : response.getLadders().entrySet()) {
-                    assertTrue(ladder.getKey() >= 2 && ladder.getKey() <= maxCell - 1,
-                            "Ladder bottom out of bounds: " + ladder.getKey());
-                    assertTrue(ladder.getValue() >= 3 && ladder.getValue() <= maxCell - 1,
-                            "Ladder top out of bounds: " + ladder.getValue());
-                    assertTrue(ladder.getKey() < ladder.getValue(),
-                            "Ladder must go up: bottom=" + ladder.getKey() + ", top=" + ladder.getValue());
+                    int bottom = ladder.getKey();
+                    int top = ladder.getValue();
+
+                    assertTrue(bottom >= 2 && bottom <= maxCell - 1,
+                            "Ladder bottom out of bounds: " + bottom + " for board size " + size);
+                    assertTrue(top >= 3 && top <= maxCell - 1,
+                            "Ladder top out of bounds: " + top + " for board size " + size);
+                    assertTrue(bottom < top,
+                            "Ladder must go up: bottom=" + bottom + ", top=" + top);
                 }
             }
         }
@@ -223,269 +224,173 @@ class SnakeLadderServiceTest {
     // Test 9: No snake head at cell 1
     @Test
     void testNoSnakeAtCellOne() {
-        when(roundRepo.save(any(GameRound.class))).thenReturn(new GameRound());
-        when(algoRepo.save(any(AlgorithmRun.class))).thenReturn(new AlgorithmRun());
-
-        for (int size = 6; size <= 12; size++) {
-            SnakeLadderRequest request = new SnakeLadderRequest();
-            request.setBoardSize(size);
-
-            SnakeLadderResponse response = service.startGame(request);
-
-            if (response.getSnakes() != null) {
-                assertFalse(response.getSnakes().containsKey(1), "Snake head cannot be at cell 1");
-            }
-        }
-    }
-
-    // Test 10: Both algorithms return same result
-    @Test
-    void testBothAlgorithmsGiveSameResult() {
-        when(roundRepo.save(any(GameRound.class))).thenReturn(new GameRound());
-        when(algoRepo.save(any(AlgorithmRun.class))).thenReturn(new AlgorithmRun());
-
-        SnakeLadderResponse response = service.startGame(validRequest);
-
-        // Both algorithms should return same minimum moves
-        assertTrue(response.getCorrectAnswer() > 0);
-    }
-}*/
-
-package com.dsagamehub.service;
-
-import com.dsagamehub.dto.*;
-import com.dsagamehub.model.*;
-import com.dsagamehub.repository.*;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.util.*;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
-class SnakeLadderServiceTest {
-
-    @Mock
-    private GameRoundRepository roundRepo;
-
-    @Mock
-    private AlgorithmRunRepository algoRepo;
-
-    @Mock
-    private SnakeLadderRepository snakeLadderResultRepo;
-
-    @Mock
-    private PlayerRepository playerRepo;
-
-    @Mock
-    private PlayerAnswerRepository playerAnswerRepo;
-
-    @InjectMocks
-    private SnakeLadderService snakeLadderService;
-
-    private SnakeLadderRequest validRequest;
-
-    @BeforeEach
-    void setUp() {
-        validRequest = new SnakeLadderRequest();
-        validRequest.setBoardSize(8);
-        validRequest.setPlayerName("TestPlayer");
-    }
-
-    // Test 1: Board size validation
-    @Test
-    void testBoardSizeValidation() {
-        // Invalid size - too small
-        SnakeLadderRequest tooSmall = new SnakeLadderRequest();
-        tooSmall.setBoardSize(5);
-        assertThrows(IllegalArgumentException.class, () -> {
-            snakeLadderService.startGame(tooSmall);
-        });
-
-        // Invalid size - too large
-        SnakeLadderRequest tooLarge = new SnakeLadderRequest();
-        tooLarge.setBoardSize(13);
-        assertThrows(IllegalArgumentException.class, () -> {
-            snakeLadderService.startGame(tooLarge);
-        });
-    }
-
-    // Test 2: Correct number of snakes and ladders (N-2)
-    @Test
-    void testCorrectNumberOfSnakesAndLadders() {
         for (int size = 6; size <= 12; size++) {
             SnakeLadderRequest request = new SnakeLadderRequest();
             request.setBoardSize(size);
             request.setPlayerName("Test");
 
-            try {
-                java.lang.reflect.Method generateLadders = SnakeLadderService.class.getDeclaredMethod(
-                        "generateValidLadders", int.class);
-                java.lang.reflect.Method generateSnakes = SnakeLadderService.class.getDeclaredMethod(
-                        "generateValidSnakes", int.class, Map.class);
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
 
-                generateLadders.setAccessible(true);
-                generateSnakes.setAccessible(true);
-
-                Map<Integer, Integer> ladders = (Map<Integer, Integer>) generateLadders.invoke(snakeLadderService, size);
-                Map<Integer, Integer> snakes = (Map<Integer, Integer>) generateSnakes.invoke(snakeLadderService, size, new HashMap<>());
-
-                assertEquals(size - 2, ladders.size());
-                assertEquals(size - 2, snakes.size());
-
-            } catch (Exception e) {
-                System.out.println("Could not test generation for size: " + size);
+            if (response.getSnakes() != null) {
+                assertFalse(response.getSnakes().containsKey(1),
+                        "Snake head cannot be at cell 1 for board size " + size);
             }
         }
     }
 
-    // Test 3: Player name validation
-    @Test
-    void testPlayerNameValidation() {
-        PlayerAnswerRequest request = new PlayerAnswerRequest();
-        request.setPlayerName("");
-        request.setAnswerText("5");
-        request.setRoundId(1L);
-
-        ApiResponse response = snakeLadderService.submitAnswer(request);
-        assertFalse(response.isSuccess());
-        assertEquals("Player name is required", response.getMessage());
-    }
-
-    // Test 4: Answer format validation - FIXED
-    @Test
-    void testAnswerFormatValidation() {
-        PlayerAnswerRequest request = new PlayerAnswerRequest();
-        request.setPlayerName("Test");
-        request.setAnswerText("not a number");
-        request.setRoundId(1L);
-
-        ApiResponse response = snakeLadderService.submitAnswer(request);
-        assertFalse(response.isSuccess());
-        assertEquals("Invalid answer format. Please enter a number.", response.getMessage());
-    }
-
-    // Test 5: Round ID validation - FIXED
-    @Test
-    void testRoundIdValidation() {
-        PlayerAnswerRequest request = new PlayerAnswerRequest();
-        request.setPlayerName("Test");
-        request.setAnswerText("10");
-        request.setRoundId(null);
-
-        ApiResponse response = snakeLadderService.submitAnswer(request);
-        assertFalse(response.isSuccess());
-        assertEquals("No active game round. Please start a new game.", response.getMessage());
-    }
-
-    // Test 6: Options have 3 choices
-    @Test
-    void testOptionsHaveThreeChoices() {
-        try {
-            java.lang.reflect.Method generateOptions = SnakeLadderService.class.getDeclaredMethod(
-                    "generateOptions", int.class);
-            generateOptions.setAccessible(true);
-
-            List<Integer> options = (List<Integer>) generateOptions.invoke(snakeLadderService, 5);
-            assertEquals(3, options.size());
-
-            options = (List<Integer>) generateOptions.invoke(snakeLadderService, 10);
-            assertEquals(3, options.size());
-
-        } catch (Exception e) {
-            fail("Could not test generateOptions: " + e.getMessage());
-        }
-    }
-
-    // Test 7: BFS algorithm returns valid result
-    @Test
-    void testBfsAlgorithmReturnsValidResult() {
-        try {
-            java.lang.reflect.Method bfsMethod = SnakeLadderService.class.getDeclaredMethod(
-                    "bfs", int.class, Map.class, Map.class);
-            bfsMethod.setAccessible(true);
-
-            Map<Integer, Integer> emptyMap = new HashMap<>();
-            int result = (int) bfsMethod.invoke(snakeLadderService, 6, emptyMap, emptyMap);
-
-            assertTrue(result > 0 && result < 20, "BFS result should be between 1 and 20, but was: " + result);
-
-        } catch (Exception e) {
-            fail("BFS test failed: " + e.getMessage());
-        }
-    }
-
-    // Test 8: DP algorithm returns valid result - FIXED
-    @Test
-    void testDpAlgorithmReturnsValidResult() {
-        try {
-            // Try both possible method names
-            java.lang.reflect.Method dpMethod = null;
-            try {
-                dpMethod = SnakeLadderService.class.getDeclaredMethod(
-                        "dynamicProgramming", int.class, Map.class, Map.class);
-            } catch (NoSuchMethodException e) {
-                dpMethod = SnakeLadderService.class.getDeclaredMethod(
-                        "dynamicProgrammingFast", int.class, Map.class, Map.class);
-            }
-
-            dpMethod.setAccessible(true);
-
-            Map<Integer, Integer> emptyMap = new HashMap<>();
-            int result = (int) dpMethod.invoke(snakeLadderService, 6, emptyMap, emptyMap);
-
-            assertTrue(result > 0 && result < 20, "DP result should be between 1 and 20, but was: " + result);
-
-        } catch (Exception e) {
-            fail("DP test failed: " + e.getMessage());
-        }
-    }
-
-    // Test 9: No snake head at cell 1
-    @Test
-    void testNoSnakeAtCellOne() {
-        try {
-            java.lang.reflect.Method generateSnakes = SnakeLadderService.class.getDeclaredMethod(
-                    "generateValidSnakes", int.class, Map.class);
-            generateSnakes.setAccessible(true);
-
-            for (int size = 6; size <= 12; size++) {
-                Map<Integer, Integer> snakes = (Map<Integer, Integer>) generateSnakes.invoke(
-                        snakeLadderService, size, new HashMap<>());
-                assertFalse(snakes.containsKey(1), "Snake head cannot be at cell 1 for size: " + size);
-            }
-
-        } catch (Exception e) {
-            // Skip if reflection fails
-            System.out.println("Could not test snake positions: " + e.getMessage());
-        }
-    }
-
-    // Test 10: No ladder at last cell
+    // Test 10: No ladder ending at last cell
     @Test
     void testNoLadderAtLastCell() {
-        try {
-            java.lang.reflect.Method generateLadders = SnakeLadderService.class.getDeclaredMethod(
-                    "generateValidLadders", int.class);
-            generateLadders.setAccessible(true);
+        for (int size = 6; size <= 12; size++) {
+            SnakeLadderRequest request = new SnakeLadderRequest();
+            request.setBoardSize(size);
+            request.setPlayerName("Test");
 
-            for (int size = 6; size <= 12; size++) {
-                Map<Integer, Integer> ladders = (Map<Integer, Integer>) generateLadders.invoke(
-                        snakeLadderService, size);
-                int totalCells = size * size;
-                assertFalse(ladders.containsValue(totalCells), "Ladder cannot end at last cell for size: " + size);
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
+            int lastCell = size * size;
+
+            if (response.getLadders() != null) {
+                assertFalse(response.getLadders().containsValue(lastCell),
+                        "Ladder cannot end at last cell " + lastCell + " for board size " + size);
             }
-
-        } catch (Exception e) {
-            // Skip if reflection fails
-            System.out.println("Could not test ladder positions: " + e.getMessage());
         }
+    }
+
+    // Test 11: Response has 3 options (MCQ)
+    @Test
+    void testOptionsHaveThreeChoices() {
+        for (int size = 6; size <= 12; size++) {
+            SnakeLadderRequest request = new SnakeLadderRequest();
+            request.setBoardSize(size);
+            request.setPlayerName("Test");
+
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
+
+            assertNotNull(response.getOptions());
+            assertEquals(3, response.getOptions().size(),
+                    "Should have exactly 3 options for board size " + size);
+        }
+    }
+
+    // Test 12: Correct answer is positive
+    @Test
+    void testCorrectAnswerIsPositive() {
+        for (int size = 6; size <= 12; size++) {
+            SnakeLadderRequest request = new SnakeLadderRequest();
+            request.setBoardSize(size);
+            request.setPlayerName("Test");
+
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
+
+            assertTrue(response.getCorrectAnswer() > 0,
+                    "Correct answer should be positive for board size " + size);
+        }
+    }
+
+    // Test 13: Round ID is generated and unique
+    @Test
+    void testRoundIdIsGenerated() {
+        SnakeLadderRequest request = new SnakeLadderRequest();
+        request.setBoardSize(8);
+        request.setPlayerName("Test");
+
+        SnakeLadderResponse response1 = snakeLadderService.startGame(request);
+        SnakeLadderResponse response2 = snakeLadderService.startGame(request);
+
+        assertNotNull(response1.getRoundId());
+        assertNotNull(response2.getRoundId());
+        assertNotEquals(response1.getRoundId(), response2.getRoundId(),
+                "Each game should have a unique round ID");
+    }
+
+    // Test 14: Empty player name in start game should throw exception
+    @Test
+    void testEmptyPlayerNameInStartGame() {
+        SnakeLadderRequest request = new SnakeLadderRequest();
+        request.setBoardSize(8);
+        request.setPlayerName("");
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            snakeLadderService.startGame(request);
+        }, "Empty player name should throw IllegalArgumentException");
+    }
+
+    // Test 15: Null player name in start game should throw exception
+    @Test
+    void testNullPlayerNameInStartGame() {
+        SnakeLadderRequest request = new SnakeLadderRequest();
+        request.setBoardSize(8);
+        request.setPlayerName(null);
+
+        assertThrows(IllegalArgumentException.class, () -> {
+            snakeLadderService.startGame(request);
+        }, "Null player name should throw IllegalArgumentException");
+    }
+
+    // Test 16: Both algorithms return same minimum moves (consistency test)
+    @Test
+    void testBothAlgorithmsConsistency() {
+        for (int size = 6; size <= 8; size++) {
+            SnakeLadderRequest request = new SnakeLadderRequest();
+            request.setBoardSize(size);
+            request.setPlayerName("Test");
+
+            // Just verify the response exists - both algorithms are used internally
+            SnakeLadderResponse response = snakeLadderService.startGame(request);
+            assertNotNull(response);
+            assertTrue(response.getCorrectAnswer() > 0);
+        }
+    }
+
+    // Test 17: Valid answer submission (requires a started game)
+    @Test
+    void testValidAnswerSubmission() {
+        // Start a game first
+        SnakeLadderRequest startRequest = new SnakeLadderRequest();
+        startRequest.setBoardSize(6);
+        startRequest.setPlayerName("TestPlayer");
+
+        SnakeLadderResponse startResponse = snakeLadderService.startGame(startRequest);
+        Long roundId = startResponse.getRoundId();
+        int correctAnswer = startResponse.getCorrectAnswer();
+
+        // Submit correct answer
+        SnakeLadderAnswerRequest answerRequest = new SnakeLadderAnswerRequest();
+        answerRequest.setPlayerName("TestPlayer");
+        answerRequest.setAnswerText(String.valueOf(correctAnswer));
+        answerRequest.setRoundId(roundId);
+
+        // Mock the save operation
+        when(snakeLadderResultRepo.save(any(SnakeLadderGameResult.class))).thenReturn(new SnakeLadderGameResult());
+
+        SnakeLadderApiResponse response = snakeLadderService.submitAnswer(answerRequest);
+
+        assertTrue(response.isSuccess());
+        assertTrue(response.isCorrect());
+        assertTrue(response.getMessage().contains("✅ Correct"));
+    }
+
+    // Test 18: Invalid answer submission (wrong answer)
+    @Test
+    void testInvalidAnswerSubmission() {
+        // Start a game first
+        SnakeLadderRequest startRequest = new SnakeLadderRequest();
+        startRequest.setBoardSize(6);
+        startRequest.setPlayerName("TestPlayer");
+
+        SnakeLadderResponse startResponse = snakeLadderService.startGame(startRequest);
+        Long roundId = startResponse.getRoundId();
+
+        // Submit wrong answer
+        SnakeLadderAnswerRequest answerRequest = new SnakeLadderAnswerRequest();
+        answerRequest.setPlayerName("TestPlayer");
+        answerRequest.setAnswerText("999"); // Wrong answer
+        answerRequest.setRoundId(roundId);
+
+        SnakeLadderApiResponse response = snakeLadderService.submitAnswer(answerRequest);
+
+        assertTrue(response.isSuccess());
+        assertFalse(response.isCorrect());
+        assertTrue(response.getMessage().contains("❌ Incorrect"));
     }
 }

@@ -2,7 +2,11 @@ package com.dsagamehub.service;
 
 import com.dsagamehub.dto.ApiResponse;
 import com.dsagamehub.dto.PlayerAnswerRequest;
-import com.dsagamehub.repository.*;
+import com.dsagamehub.model.PlayerAnswer;
+import com.dsagamehub.repository.AlgorithmRunRepository;
+import com.dsagamehub.repository.GameRoundRepository;
+import com.dsagamehub.repository.PlayerAnswerRepository;
+import com.dsagamehub.repository.PlayerRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -12,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,7 +46,6 @@ class SixteenQueensGameServiceTest {
     @InjectMocks
     private SixteenQueensGameService service;
 
-    // ✅ Test: Correct Answer
     @Test
     void testCorrectAnswer() {
         PlayerAnswerRequest req = new PlayerAnswerRequest();
@@ -56,15 +60,20 @@ class SixteenQueensGameServiceTest {
         when(threadedService.isValidSolution(any())).thenReturn(true);
 
         when(playerRepository.findByName("Alice")).thenReturn(Optional.empty());
-        when(playerAnswerRepository.findByAnswerTextAndCorrectTrueAndRecognizedTrue(any()))
+        when(playerAnswerRepository.findByAnswerText(any())).thenReturn(Optional.empty());
+
+        when(gameRoundRepository.findTopByGameNameOrderByRoundNumberDesc(any()))
+                .thenReturn(Optional.empty());
+        when(algorithmRunRepository.findTopByGameNameOrderBySolutionCountDescCreatedAtDesc(any()))
                 .thenReturn(Optional.empty());
 
         ApiResponse res = service.submitAnswer(req);
 
         assertTrue(res.isCorrect());
+        assertFalse(res.isAlreadyFound());
+        assertTrue(res.isSuccess());
     }
 
-    // ❌ Test: Wrong Answer
     @Test
     void testWrongAnswer() {
         PlayerAnswerRequest req = new PlayerAnswerRequest();
@@ -81,9 +90,10 @@ class SixteenQueensGameServiceTest {
         ApiResponse res = service.submitAnswer(req);
 
         assertFalse(res.isCorrect());
+        assertFalse(res.isAlreadyFound());
+        assertFalse(res.isSuccess());
     }
 
-    // 🔁 Test: Already Found Answer
     @Test
     void testAlreadyFoundAnswer() {
         PlayerAnswerRequest req = new PlayerAnswerRequest();
@@ -97,11 +107,13 @@ class SixteenQueensGameServiceTest {
         when(sequentialService.isValidSolution(any())).thenReturn(true);
         when(threadedService.isValidSolution(any())).thenReturn(true);
 
-        when(playerAnswerRepository.findByAnswerTextAndCorrectTrueAndRecognizedTrue(any()))
-                .thenReturn(Optional.of(mock(com.dsagamehub.model.PlayerAnswer.class)));
+        when(playerAnswerRepository.findByAnswerText(any()))
+                .thenReturn(Optional.of(mock(PlayerAnswer.class)));
 
         ApiResponse res = service.submitAnswer(req);
 
         assertTrue(res.isAlreadyFound());
+        assertTrue(res.isCorrect());
+        assertFalse(res.isSuccess());
     }
 }
