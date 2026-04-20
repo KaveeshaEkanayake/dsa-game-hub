@@ -832,7 +832,7 @@ public class SnakeLadderService {
         return dp[totalCells] != Integer.MAX_VALUE ? dp[totalCells] : -1;
     }
 
-    // HELPER METHODS
+    // HELPER METHODS....
 
     private List<Integer> generateOptions(int correct) {
         List<Integer> options = new ArrayList<>();
