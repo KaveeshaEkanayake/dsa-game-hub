@@ -10,6 +10,9 @@ public class AlgorithmRun {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ADD THIS FIELD
+    private Long gameRoundId;  // Link to specific game round
+
     private String gameName;
     private int roundNumber;
     private String algorithmType;
@@ -30,6 +33,10 @@ public class AlgorithmRun {
         this.timeTakenMs = timeTakenMs;
         this.createdAt = LocalDateTime.now();
     }
+
+    // ADD THIS GETTER AND SETTER
+    public Long getGameRoundId() { return gameRoundId; }
+    public void setGameRoundId(Long gameRoundId) { this.gameRoundId = gameRoundId; }
 
     public Long getId() {
         return id;
