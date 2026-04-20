@@ -4,77 +4,93 @@ import java.util.*;
 
 public class TrafficgameEdmondKarp {
 
-    public static int maxFlow(Map<String, Map<String, Integer>> graph, String source, String sink) {
+    public static int maxFlow(Map<String, Map<String, Integer>> graph,
+                              String source,
+                              String sink) {
 
-        Map<String, Map<String, Integer>> residual = new HashMap<>();
-        for (String u : graph.keySet()) {
-            residual.computeIfAbsent(u, k -> new HashMap<>());
-            for (Map.Entry<String, Integer> entry : graph.get(u).entrySet()) {
-                String v = entry.getKey();
-                int cap = entry.getValue();
-                residual.get(u).put(v, residual.get(u).getOrDefault(v, 0) + cap);
-                residual.computeIfAbsent(v, k -> new HashMap<>());
-                residual.get(v).putIfAbsent(u, 0);
-            }
-        }
-
-        int totalFlow = 0;
+        Map<String, Map<String, Integer>> residual = buildResidual(graph);
+        int maxFlow = 0;
 
         while (true) {
 
             Map<String, String> parent = new HashMap<>();
-            int augmented = bfs(residual, source, sink, parent);
-            if (augmented == 0) break;
-            totalFlow += augmented;
 
+            int flow = bfs(residual, source, sink, parent);
+            if (flow == 0) break;
+
+            maxFlow += flow;
 
             String v = sink;
             while (!v.equals(source)) {
                 String u = parent.get(v);
-                int cap = residual.get(u).get(v);
-                residual.get(u).put(v, cap - augmented);
-                residual.computeIfAbsent(v, k -> new HashMap<>());
-                residual.get(v).put(u, residual.get(v).getOrDefault(u, 0) + augmented);
+
+                residual.get(u).put(v,
+                        residual.get(u).get(v) - flow);
+
+                residual.get(v).put(u,
+                        residual.get(v).getOrDefault(u, 0) + flow);
+
                 v = u;
             }
         }
 
-        return totalFlow;
+        return maxFlow;
     }
 
-    private static int bfs(Map<String, Map<String, Integer>> residual,
-                           String source, String sink,
+    private static int bfs(Map<String, Map<String, Integer>> res,
+                           String s, String t,
                            Map<String, String> parent) {
-        Set<String> visited = new HashSet<>();
-        Queue<String> queue = new LinkedList<>();
-        Map<String, Integer> flowTo = new HashMap<>();
 
-        queue.add(source);
-        visited.add(source);
-        flowTo.put(source, Integer.MAX_VALUE);
+        Queue<String> q = new LinkedList<>();
+        Map<String, Integer> flow = new HashMap<>();
+        Set<String> vis = new HashSet<>();
 
-        while (!queue.isEmpty()) {
-            String u = queue.poll();
+        q.add(s);
+        vis.add(s);
+        flow.put(s, Integer.MAX_VALUE);
 
-            for (Map.Entry<String, Integer> entry : residual.getOrDefault(u, new HashMap<>()).entrySet()) {
-                String v = entry.getKey();
-                int cap = entry.getValue();
+        while (!q.isEmpty()) {
 
-                if (!visited.contains(v) && cap > 0) {
-                    visited.add(v);
+            String u = q.poll();
+
+            for (var e : res.getOrDefault(u, Map.of()).entrySet()) {
+
+                String v = e.getKey();
+                int cap = e.getValue();
+
+                if (!vis.contains(v) && cap > 0) {
+
                     parent.put(v, u);
-                    int newFlow = Math.min(flowTo.get(u), cap);
-                    flowTo.put(v, newFlow);
+                    vis.add(v);
 
-                    if (v.equals(sink)) {
-                        return newFlow;
-                    }
+                    flow.put(v, Math.min(flow.get(u), cap));
 
-                    queue.add(v);
+                    if (v.equals(t)) return flow.get(v);
+
+                    q.add(v);
                 }
             }
         }
 
         return 0;
+    }
+
+    private static Map<String, Map<String, Integer>> buildResidual(
+            Map<String, Map<String, Integer>> graph) {
+
+        Map<String, Map<String, Integer>> res = new HashMap<>();
+
+        for (String u : graph.keySet()) {
+            res.putIfAbsent(u, new HashMap<>());
+
+            for (String v : graph.get(u).keySet()) {
+                res.get(u).put(v, graph.get(u).get(v));
+
+                res.putIfAbsent(v, new HashMap<>());
+                res.get(v).putIfAbsent(u, 0);
+            }
+        }
+
+        return res;
     }
 }
