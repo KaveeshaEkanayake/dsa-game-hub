@@ -28,11 +28,24 @@ public class TrafficEdmondsKarpService {
         return maxFlow;
     }
 
+//    public long measureTime(List<TrafficEdge> edges) {
+//        long start = System.currentTimeMillis();
+//        computeMaxFlow(edges);
+//        long end = System.currentTimeMillis();
+//        return end - start;
+//    }
+
     public long measureTime(List<TrafficEdge> edges) {
-        long start = System.currentTimeMillis();
         computeMaxFlow(edges);
-        long end = System.currentTimeMillis();
-        return end - start;
+
+        final int RUNS = 1000;
+        long start = System.nanoTime();
+        for (int i = 0; i < RUNS; i++) {
+            computeMaxFlow(edges);
+        }
+        long end = System.nanoTime();
+
+        return (end - start) / RUNS;
     }
 
     private void buildResidualGraph(List<TrafficEdge> edges) {
