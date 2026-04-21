@@ -1105,3 +1105,92 @@ body {
     padding: 11px 14px;
   }
 }
+
+/* SIDE QUEENS INSIDE TITLE BOX */
+.title-left {
+  position: relative;
+  z-index: 2;
+
+  /* give space so text doesn’t overlap queens */
+  padding-left: 140px;
+  padding-right: 140px;
+}
+
+.title-left::before,
+.title-left::after {
+  content: "👑";
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+
+  /* 🔥 BIG + RESPONSIVE SIZE */
+  font-size: clamp(140px, 20vh, 240px);
+
+  line-height: 1;
+  font-weight: 900;
+
+  /* soft glass effect */
+  color: rgba(255, 255, 255, 0.10);
+  text-shadow: 0 0 30px rgba(255, 255, 255, 0.08);
+
+  pointer-events: none;
+  z-index: 1;
+
+  animation: titleQueenFloat 3.5s ease-in-out infinite;
+}
+
+/* left queen */
+.title-left::before {
+  left: -10px;
+}
+
+/* right queen */
+.title-left::after {
+  right: -10px;
+  animation-delay: 1.8s;
+}
+
+/* keep text above queens */
+.title-left .game-badge,
+.title-left h1,
+.title-left p {
+  position: relative;
+  z-index: 2;
+}
+
+/* subtle floating animation */
+@keyframes titleQueenFloat {
+  0%, 100% {
+    transform: translateY(-50%) translateY(0);
+  }
+  50% {
+    transform: translateY(-50%) translateY(-10px);
+  }
+}
+
+/* TABLET */
+@media (max-width: 900px) {
+  .title-left {
+    padding-left: 100px;
+    padding-right: 100px;
+  }
+
+  .title-left::before,
+  .title-left::after {
+    font-size: clamp(90px, 16vh, 160px);
+  }
+}
+
+/* MOBILE */
+@media (max-width: 520px) {
+  .title-left {
+    padding-left: 70px;
+    padding-right: 70px;
+  }
+
+  .title-left::before,
+  .title-left::after {
+    font-size: clamp(60px, 12vh, 100px);
+    color: rgba(255, 255, 255, 0.12);
+  }
+}
