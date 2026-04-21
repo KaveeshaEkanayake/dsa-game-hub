@@ -108,4 +108,15 @@ public class TrafficGameController {
         error.put("message", message);
         return error;
     }
+
+    @GetMapping("/leaderboard")
+    public ResponseEntity<?> getLeaderboard() {
+        try {
+            List<TrafficGameResult> results = trafficGameService.getLeaderboard();
+            return ResponseEntity.ok(results);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(buildErrorResponse("SERVER_ERROR", "Something went wrong"));
+        }
+    }
 }

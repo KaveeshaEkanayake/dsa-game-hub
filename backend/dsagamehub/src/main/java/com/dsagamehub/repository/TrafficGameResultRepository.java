@@ -17,4 +17,6 @@ public interface TrafficGameResultRepository extends JpaRepository<TrafficGameRe
 
     List<TrafficGameResult> findAllByOrderByCreatedAtDesc();
 
+    List<TrafficGameResult> findAllByOrderByIsCorrectDescCreatedAtDesc();
+
 }
