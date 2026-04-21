@@ -90,13 +90,15 @@ public class TrafficGameService {
         boolean isCorrect = playerAnswer == correctMaxFlow;
         String result;
 
-        if (isCorrect) {
+        if (playerAnswer == correctMaxFlow) {
             result = "WIN";
-        } else if (playerAnswer > correctMaxFlow) {
-            result = "LOSE";
+        } else if (Math.abs(playerAnswer - correctMaxFlow) <= 1) {
+            result = "DRAW";
         } else {
             result = "LOSE";
         }
+
+        isCorrect = result.equals("WIN");
 
         TrafficGameResult gameResult = new TrafficGameResult(
                 request.getPlayerName(),
@@ -185,11 +187,17 @@ public class TrafficGameService {
     }
 
     private String buildResultMessage(String result, int correctAnswer, int playerAnswer) {
-        if (result.equals("WIN")) {
-            return "Correct! The maximum flow is " + correctAnswer + " vehicles/minute!";
-        } else {
-            return "Wrong! Your answer was " + playerAnswer +
-                    " but the correct maximum flow is " + correctAnswer + " vehicles/minute!";
+        switch (result) {
+            case "WIN":
+                return "Correct! The maximum flow is " + correctAnswer + " vehicles/minute!";
+            case "DRAW":
+                return "So close! Your answer was " + playerAnswer +
+                        " but the correct maximum flow is " + correctAnswer +
+                        " vehicles/minute. You were within 1!";
+            default:
+                return "Wrong! Your answer was " + playerAnswer +
+                        " but the correct maximum flow is " + correctAnswer +
+                        " vehicles/minute!";
         }
     }
 }
