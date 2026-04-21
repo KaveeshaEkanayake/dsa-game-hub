@@ -186,6 +186,10 @@ public class TrafficGameService {
         return edges;
     }
 
+    public List<TrafficGameResult> getLeaderboard() {
+        return resultRepository.findAllByOrderByIsCorrectDescCreatedAtDesc();
+    }
+
     private Map<String, Integer> buildCapacityMap(List<TrafficEdge> edges) {
         Map<String, Integer> capacities = new LinkedHashMap<>();
         for (TrafficEdge edge : edges) {
