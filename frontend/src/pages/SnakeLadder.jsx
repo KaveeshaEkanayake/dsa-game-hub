@@ -1021,13 +1021,13 @@ export default function SnakeLadderGame() {
                 padding: "12px", 
                 borderRadius: "8px", 
                 border: "none", 
-                background: loading ? "rgba(7,61,46,0.6)" : "rgba(7,61,46,0.85)", 
+                background: loading ? "rgba(149, 218, 199, 0.6)" : "rgba(49, 146, 118, 0.85)", 
                 color: "#fff", 
                 fontSize: "14px", 
                 fontWeight: "bold", 
                 cursor: loading ? "not-allowed" : "pointer", 
                 opacity: loading ? 0.6 : 1, 
-                boxShadow: "0 4px 15px rgba(7,61,46,0.4)",
+                boxShadow: "0 4px 15px rgba(14, 106, 80, 0.4)",
                 transition: "all 0.3s ease"
               }}>
               {loading ? "Connecting..." : "Start Game"}
@@ -1142,7 +1142,11 @@ export default function SnakeLadderGame() {
           </div>
         )}
         
+
                {/* RESULT SCREEN - ENHANCED WIN SCREEN */}
+
+        {/* RESULT SCREEN - FIXED: Removed unnecessary /1000 division */}
+
         {gameState === "result" && (
           <div style={{ 
             maxWidth: "500px", 
@@ -1199,6 +1203,7 @@ export default function SnakeLadderGame() {
               Congratulations <strong style={{ color: "#FFD700", fontSize: "20px" }}>{playerName}</strong>!
             </p>
             
+
             <p style={{ 
               color: "rgba(255,255,255,0.7)", 
               fontSize: "13px", 
@@ -1253,6 +1258,20 @@ export default function SnakeLadderGame() {
               }}>
                 <p style={{ color: "#4ade80", fontSize: "12px", marginBottom: "10px", textAlign: "center", fontWeight: "bold", letterSpacing: "1px" }}>
                   ⚡ ALGORITHM PERFORMANCE
+
+            {/* Display times in milliseconds - FIXED: No division by 1000 */}
+            {algo1TimeMs !== null && algo2TimeMs !== null && (
+              <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: "10px", padding: "0.8rem", marginBottom: "1rem", textAlign: "left" }}>
+                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", marginBottom: "5px" }}>This Game's Performance</p>
+                <p style={{ color: "#fff", fontSize: "11px" }}>
+                  ⚡ BFS: <strong>{algo1TimeMs.toFixed(3)}ms</strong>
+                </p>
+                <p style={{ color: "#fff", fontSize: "11px" }}>
+                  📊 Dynamic Programming: <strong>{algo2TimeMs.toFixed(3)}ms</strong>
+                </p>
+                <p style={{ color: "#4ade80", fontSize: "10px", marginTop: "5px" }}>
+                  {algo1TimeMs <= algo2TimeMs ? "🏆 BFS was faster" : "🏆 DP was faster"}
+
                 </p>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", padding: "0 10px" }}>
                   <span style={{ color: "#FFD700", fontSize: "13px", fontWeight: "500" }}>🔵 BFS Algorithm:</span>
@@ -1282,8 +1301,12 @@ export default function SnakeLadderGame() {
               </div>
             )}
             
+
             {/* Action Buttons */}
             <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
+
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+
               <button 
                 onClick={resetGame} 
                 style={{ 
@@ -1310,6 +1333,22 @@ export default function SnakeLadderGame() {
               </button>
               <button 
                 onClick={openPerformanceDashboard}
+
+                style={{ 
+                  flex: 1, 
+                  padding: "10px", 
+                  borderRadius: "8px", 
+                  border: "none", 
+                  background: "#378ADD", 
+                  color: "#fff", 
+                  fontSize: "12px", 
+                  cursor: "pointer" 
+                }}>
+                📊 View Performance
+              </button>
+              <button 
+                onClick={() => navigate("/")} 
+
                 style={{ 
                   flex: 1, 
                   minWidth: "120px",
@@ -1361,7 +1400,19 @@ export default function SnakeLadderGame() {
         )}
       </div>
       
-      
+
+
+      <style>{`
+        @keyframes float { 
+          0%, 100% { transform: translateY(0px); } 
+          50% { transform: translateY(-8px); } 
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      `}</style>
+
     </div>
   );
 }
