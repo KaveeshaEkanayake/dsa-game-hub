@@ -2,11 +2,9 @@ package com.dsagamehub.dto;
 
 public class SnakeLadderAnswerRequest {
 
-    private String playerName;    // Name of the player
-    private String answerText;    // The answer selected by player (as string)
-    private Long roundId;         // The current game round ID
-
-    // Default constructor (required for JSON deserialization)
+    private String playerName;
+    private String answerText;
+    private Long roundId;
     public SnakeLadderAnswerRequest() {
     }
 

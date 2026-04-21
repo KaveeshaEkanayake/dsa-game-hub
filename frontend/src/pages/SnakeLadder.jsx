@@ -32,15 +32,18 @@ export default function SnakeLadderGame() {
   const [resultMessage, setResultMessage] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Algorithm times (microseconds from backend)
-  const [algo1TimeMicro, setAlgo1TimeMicro] = useState(null);
-  const [algo2TimeMicro, setAlgo2TimeMicro] = useState(null);
+  // Algorithm times (already in milliseconds from backend)
+  const [algo1TimeMs, setAlgo1TimeMs] = useState(null);
+  const [algo2TimeMs, setAlgo2TimeMs] = useState(null);
   
   // Board dimensions
   const [boardSizePx, setBoardSizePx] = useState(500);
-  const [chartData, setChartData] = useState([]);
-  const [showChart, setShowChart] = useState(false);
-  const [roundCounter, setRoundCounter] = useState(0);
+  
+  // Chart Dashboard state
+  const [showPerformanceDashboard, setShowPerformanceDashboard] = useState(false);
+  const [performanceData, setPerformanceData] = useState([]);
+  const [performanceStats, setPerformanceStats] = useState(null);
+  const [loadingPerformance, setLoadingPerformance] = useState(false);
 
   // Starfield Background
   useEffect(() => {
@@ -120,6 +123,47 @@ export default function SnakeLadderGame() {
   }, [boardSize]);
 
   // ===============================
+  // PERFORMANCE DASHBOARD API CALLS
+  // ===============================
+  
+  const fetchPerformanceData = async () => {
+    if (!playerName) return;
+    
+    setLoadingPerformance(true);
+    try {
+      // Fetch performance history
+      const historyResponse = await fetch(`${API_URL}/api/snake-ladder/performance/history?playerName=${encodeURIComponent(playerName)}`);
+      const historyData = await historyResponse.json();
+      
+      // Format data for chart
+      const formattedData = historyData.map((record, idx) => ({
+        round: record.roundNumber || idx + 1,
+        boardSize: record.boardSize,
+        bfsTime: record.bfsTimeMs,
+        dpTime: record.dpTimeMs,
+        winner: record.winner,
+        timestamp: record.timestamp
+      }));
+      setPerformanceData(formattedData);
+      
+      // Fetch performance stats
+      const statsResponse = await fetch(`${API_URL}/api/snake-ladder/performance/stats?playerName=${encodeURIComponent(playerName)}`);
+      const statsData = await statsResponse.json();
+      setPerformanceStats(statsData);
+      
+    } catch (error) {
+      console.error("Error fetching performance data:", error);
+    } finally {
+      setLoadingPerformance(false);
+    }
+  };
+
+  const openPerformanceDashboard = () => {
+    fetchPerformanceData();
+    setShowPerformanceDashboard(true);
+  };
+
+  // ===============================
   // BACKEND API CALLS
   // ===============================
   
@@ -157,9 +201,9 @@ export default function SnakeLadderGame() {
       const totalCells = data.boardSize * data.boardSize;
       const options = data.options || [];
       
-      // Store times in microseconds
-      setAlgo1TimeMicro(data.bfsTimeMs || 0);
-      setAlgo2TimeMicro(data.dpTimeMs || 0);
+      // Store times (already in milliseconds from backend)
+      setAlgo1TimeMs(data.bfsTimeMs || 0);
+      setAlgo2TimeMs(data.dpTimeMs || 0);
       
       const newGameData = {
         boardSize: data.boardSize,
@@ -217,16 +261,11 @@ export default function SnakeLadderGame() {
       const data = await response.json();
       console.log("Submit response:", data);
       
-      // Backend returns SnakeLadderApiResponse with these fields
       const isCorrect = data.correct;
       const message = data.message;
       setResultMessage(message);
       
       if (isCorrect) {
-        // Update times from response (in microseconds)
-        if (data.sequentialCheckTimeMs) setAlgo1TimeMicro(data.sequentialCheckTimeMs);
-        if (data.threadedCheckTimeMs) setAlgo2TimeMicro(data.threadedCheckTimeMs);
-        
         setTimeout(() => {
           setResultMessage("");
           setGameState("playing");
@@ -284,21 +323,6 @@ export default function SnakeLadderGame() {
     setPlayerPosition(newPos);
     
     if (newPos === gameData.totalCells) {
-      const newRoundNumber = roundCounter + 1;
-      setRoundCounter(newRoundNumber);
-      
-      // Convert microseconds to milliseconds for chart display
-      const bfsTimeMs = (algo1TimeMicro || 0) / 1000;
-      const dpTimeMs = (algo2TimeMicro || 0) / 1000;
-      
-      setChartData(prevData => [...prevData, {
-        round: newRoundNumber,
-        boardSize: gameData.boardSize,
-        bfsTime: bfsTimeMs,
-        dpTime: dpTimeMs,
-        winner: bfsTimeMs <= dpTimeMs ? "BFS" : "DP"
-      }]);
-      setShowChart(true);
       setWinner(1);
       setGameOver(true);
       setGameState("result");
@@ -733,119 +757,170 @@ export default function SnakeLadderGame() {
     setSelectedAnswer(null);
     setResultMessage("");
     setPlayerName("");
-    setAlgo1TimeMicro(null);
-    setAlgo2TimeMicro(null);
+    setAlgo1TimeMs(null);
+    setAlgo2TimeMs(null);
     setChoices([]);
   };
 
-  const clearChartHistory = () => {
-    setChartData([]);
-    setRoundCounter(0);
-    setShowChart(false);
-  };
-
   // ===============================
-  // PERFORMANCE CHART COMPONENT
+  // PERFORMANCE DASHBOARD COMPONENT
   // ===============================
-  const PerformanceChart = () => {
-    if (!showChart || chartData.length === 0) return null;
+  const PerformanceDashboard = () => {
+    if (!showPerformanceDashboard) return null;
     
-    const avgBfsTime = (chartData.reduce((sum, d) => sum + d.bfsTime, 0) / chartData.length).toFixed(2);
-    const avgDpTime = (chartData.reduce((sum, d) => sum + d.dpTime, 0) / chartData.length).toFixed(2);
-    const dpFasterCount = chartData.filter(d => d.dpTime < d.bfsTime).length;
+    const avgBfsTime = performanceData.length > 0 
+      ? (performanceData.reduce((sum, d) => sum + d.bfsTime, 0) / performanceData.length).toFixed(2)
+      : 0;
+    const avgDpTime = performanceData.length > 0
+      ? (performanceData.reduce((sum, d) => sum + d.dpTime, 0) / performanceData.length).toFixed(2)
+      : 0;
+    const dpFasterCount = performanceData.filter(d => d.dpTime < d.bfsTime).length;
     
     return (
       <div style={{
         position: "fixed",
-        top: "20px",
-        right: "20px",
-        width: "400px",
-        maxHeight: "85vh",
-        background: "rgba(13,59,110,0.95)",
-        backdropFilter: "blur(10px)",
-        borderRadius: "16px",
-        border: "1px solid #FFD700",
-        boxShadow: "0 10px 30px rgba(0,0,0,0.5)",
-        zIndex: 1000,
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        background: "rgba(0,0,0,0.95)",
+        zIndex: 2000,
         overflowY: "auto",
-        padding: "12px"
+        padding: "20px"
       }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", borderBottom: "1px solid rgba(255,255,255,0.2)", paddingBottom: "8px" }}>
-          <div>
-            <span style={{ fontSize: "16px", marginRight: "5px" }}>📊</span>
-            <span style={{ color: "#FFD700", fontSize: "14px", fontWeight: "bold" }}>Performance History</span>
-            <span style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", marginLeft: "5px" }}>({chartData.length} games)</span>
+        <div style={{
+          maxWidth: "1000px",
+          margin: "0 auto",
+          background: "linear-gradient(135deg, #0d3b6e, #0a2a4a)",
+          borderRadius: "20px",
+          border: "2px solid #FFD700",
+          padding: "20px",
+          boxShadow: "0 20px 40px rgba(0,0,0,0.5)"
+        }}>
+          {/* Header */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "20px", paddingBottom: "15px", borderBottom: "1px solid rgba(255,255,255,0.2)" }}>
+            <div>
+              <span style={{ fontSize: "24px", marginRight: "10px" }}>📊</span>
+              <span style={{ fontSize: "24px", fontWeight: "bold", color: "#FFD700" }}>Performance Dashboard</span>
+              <span style={{ fontSize: "14px", color: "#aaa", marginLeft: "10px" }}>Player: {playerName}</span>
+            </div>
+            <button 
+              onClick={() => setShowPerformanceDashboard(false)} 
+              style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", fontSize: "20px", width: "36px", height: "36px", borderRadius: "18px", cursor: "pointer" }}
+            >
+              ✕
+            </button>
           </div>
-          <div style={{ display: "flex", gap: "8px" }}>
-            <button onClick={clearChartHistory} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", fontSize: "10px", padding: "3px 8px", borderRadius: "4px", cursor: "pointer" }}>🗑️ Clear</button>
-            <button onClick={() => setShowChart(false)} style={{ background: "rgba(255,255,255,0.1)", border: "none", color: "#fff", fontSize: "16px", width: "24px", height: "24px", borderRadius: "4px", cursor: "pointer" }}>✕</button>
-          </div>
-        </div>
-        
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "8px", marginBottom: "12px", padding: "8px", background: "rgba(0,0,0,0.4)", borderRadius: "8px" }}>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.6)" }}>Avg BFS</p>
-            <p style={{ fontSize: "14px", fontWeight: "bold", color: "#FFD700" }}>{avgBfsTime}ms</p>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.6)" }}>Avg DP</p>
-            <p style={{ fontSize: "14px", fontWeight: "bold", color: "#4ade80" }}>{avgDpTime}ms</p>
-          </div>
-          <div style={{ textAlign: "center" }}>
-            <p style={{ fontSize: "9px", color: "rgba(255,255,255,0.6)" }}>DP Faster</p>
-            <p style={{ fontSize: "14px", fontWeight: "bold", color: "#378ADD" }}>
-              {chartData.length > 0 ? ((dpFasterCount / chartData.length) * 100).toFixed(0) : 0}%
-            </p>
-          </div>
-        </div>
-        
-        <div style={{ height: "200px", marginBottom: "12px" }}>
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
-              <XAxis dataKey="round" stroke="#fff" fontSize={10} tick={{ fill: '#fff' }} />
-              <YAxis 
-                stroke="#fff" 
-                fontSize={10} 
-                tick={{ fill: '#fff' }}
-                label={{ value: 'Time (ms)', angle: -90, position: 'insideLeft', style: { fill: '#fff', fontSize: 10 } }}
-              />
-              <Tooltip 
-                contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #FFD700', fontSize: '10px' }} 
-                labelStyle={{ color: '#FFD700' }} 
-                formatter={(value, name) => [`${Number(value).toFixed(2)} ms`, name]} 
-              />
-              <Line type="monotone" dataKey="bfsTime" stroke="#FFD700" name="BFS" strokeWidth={2} dot={{ r: 3 }} />
-              <Line type="monotone" dataKey="dpTime" stroke="#4ade80" name="DP" strokeWidth={2} dot={{ r: 3 }} />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-        
-        <div style={{ maxHeight: "200px", overflowY: "auto", fontSize: "10px" }}>
-          <table style={{ width: "100%", color: "#fff", borderCollapse: "collapse" }}>
-            <thead style={{ position: "sticky", top: 0, background: "#0d3b6e" }}>
-              <tr>
-                <th style={{ padding: "4px" }}>#</th>
-                <th style={{ padding: "4px" }}>Size</th>
-                <th style={{ padding: "4px" }}>BFS (ms)</th>
-                <th style={{ padding: "4px" }}>DP (ms)</th>
-                <th style={{ padding: "4px" }}>🏆</th>
-              </tr>
-            </thead>
-            <tbody>
-              {chartData.map((row) => (
-                <tr key={row.round} style={{ textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
-                  <td style={{ padding: "3px" }}>{row.round}</td>
-                  <td style={{ padding: "3px" }}>{row.boardSize}</td>
-                  <td style={{ padding: "3px", color: "#FFD700" }}>{row.bfsTime.toFixed(2)}</td>
-                  <td style={{ padding: "3px", color: "#4ade80" }}>{row.dpTime.toFixed(2)}</td>
-                  <td style={{ padding: "3px", color: row.dpTime < row.bfsTime ? "#4ade80" : "#FFD700" }}>
-                    {row.dpTime < row.bfsTime ? "DP" : "BFS"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          
+          {loadingPerformance ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              <div style={{ border: "4px solid rgba(255,215,0,0.3)", borderTop: "4px solid #FFD700", borderRadius: "50%", width: "40px", height: "40px", animation: "spin 1s linear infinite", margin: "0 auto" }}></div>
+              <p style={{ color: "#fff", marginTop: "20px" }}>Loading performance data...</p>
+            </div>
+          ) : performanceData.length === 0 ? (
+            <div style={{ textAlign: "center", padding: "40px" }}>
+              <h3 style={{ color: "#FFD700" }}>📊 No Performance Data Yet</h3>
+              <p style={{ color: "#aaa", marginTop: "10px" }}>
+                Play some games to see performance charts! Each correct answer will be recorded.
+              </p>
+              <button 
+                onClick={() => setShowPerformanceDashboard(false)} 
+                style={{ marginTop: "20px", padding: "10px 20px", background: "#FFD700", border: "none", borderRadius: "8px", cursor: "pointer", fontWeight: "bold" }}
+              >
+                Close
+              </button>
+            </div>
+          ) : (
+            <>
+              {/* Statistics Cards */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "15px", marginBottom: "25px" }}>
+                <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: "12px", padding: "15px", textAlign: "center", border: "1px solid rgba(255,215,0,0.3)" }}>
+                  <p style={{ fontSize: "12px", color: "#aaa" }}>Total Rounds</p>
+                  <p style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700" }}>{performanceData.length}</p>
+                  <p style={{ fontSize: "10px", color: "#888" }}>Games completed</p>
+                </div>
+                <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: "12px", padding: "15px", textAlign: "center", border: "1px solid rgba(255,215,0,0.3)" }}>
+                  <p style={{ fontSize: "12px", color: "#aaa" }}>Avg BFS Time</p>
+                  <p style={{ fontSize: "28px", fontWeight: "bold", color: "#FFD700" }}>{avgBfsTime} ms</p>
+                  <p style={{ fontSize: "10px", color: "#888" }}>Best: {performanceStats?.bestBfsTime || 0} ms</p>
+                </div>
+                <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: "12px", padding: "15px", textAlign: "center", border: "1px solid rgba(255,215,0,0.3)" }}>
+                  <p style={{ fontSize: "12px", color: "#aaa" }}>Avg DP Time</p>
+                  <p style={{ fontSize: "28px", fontWeight: "bold", color: "#4ade80" }}>{avgDpTime} ms</p>
+                  <p style={{ fontSize: "10px", color: "#888" }}>Best: {performanceStats?.bestDpTime || 0} ms</p>
+                </div>
+                <div style={{ background: "rgba(0,0,0,0.4)", borderRadius: "12px", padding: "15px", textAlign: "center", border: "1px solid rgba(255,215,0,0.3)" }}>
+                  <p style={{ fontSize: "12px", color: "#aaa" }}>DP Faster</p>
+                  <p style={{ fontSize: "28px", fontWeight: "bold", color: "#378ADD" }}>
+                    {performanceData.length > 0 ? ((dpFasterCount / performanceData.length) * 100).toFixed(0) : 0}%
+                  </p>
+                  <p style={{ fontSize: "10px", color: "#888" }}>({dpFasterCount} of {performanceData.length} rounds)</p>
+                </div>
+              </div>
+              
+              {/* Line Chart */}
+              <div style={{ height: "350px", marginBottom: "25px", background: "rgba(0,0,0,0.2)", borderRadius: "12px", padding: "15px" }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={performanceData} margin={{ top: 5, right: 5, left: 0, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                    <XAxis dataKey="round" stroke="#fff" fontSize={10} tick={{ fill: '#fff' }} label={{ value: 'Game Round', position: 'bottom', fill: '#fff', fontSize: 10 }} />
+                    <YAxis stroke="#fff" fontSize={10} tick={{ fill: '#fff' }} label={{ value: 'Time (milliseconds)', angle: -90, position: 'insideLeft', fill: '#fff', fontSize: 10 }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #FFD700', fontSize: '10px' }} formatter={(value, name) => [`${Number(value).toFixed(2)} ms`, name]} />
+                    <Legend />
+                    <Line type="monotone" dataKey="bfsTime" stroke="#FFD700" name="BFS Algorithm" strokeWidth={2} dot={{ r: 4 }} />
+                    <Line type="monotone" dataKey="dpTime" stroke="#4ade80" name="DP Algorithm" strokeWidth={2} dot={{ r: 4 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              
+              {/* Data Table */}
+              <div style={{ maxHeight: "250px", overflowY: "auto", fontSize: "12px" }}>
+                <h4 style={{ color: "#FFD700", marginBottom: "10px" }}>📋 Round-by-Round Data</h4>
+                <table style={{ width: "100%", color: "#fff", borderCollapse: "collapse" }}>
+                  <thead style={{ position: "sticky", top: 0, background: "#0d3b6e" }}>
+                    <tr>
+                      <th style={{ padding: "8px", borderBottom: "1px solid #FFD700" }}>Round</th>
+                      <th style={{ padding: "8px", borderBottom: "1px solid #FFD700" }}>Board Size</th>
+                      <th style={{ padding: "8px", borderBottom: "1px solid #FFD700" }}>BFS (ms)</th>
+                      <th style={{ padding: "8px", borderBottom: "1px solid #FFD700" }}>DP (ms)</th>
+                      <th style={{ padding: "8px", borderBottom: "1px solid #FFD700" }}>Winner</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {performanceData.map((row) => (
+                      <tr key={row.round} style={{ textAlign: "center", borderBottom: "1px solid rgba(255,255,255,0.1)" }}>
+                        <td style={{ padding: "6px" }}>{row.round}</td>
+                        <td style={{ padding: "6px" }}>{row.boardSize}×{row.boardSize}</td>
+                        <td style={{ padding: "6px", color: "#FFD700" }}>{row.bfsTime.toFixed(2)}</td>
+                        <td style={{ padding: "6px", color: "#4ade80" }}>{row.dpTime.toFixed(2)}</td>
+                        <td style={{ padding: "6px", color: row.dpTime < row.bfsTime ? "#4ade80" : "#FFD700", fontWeight: "bold" }}>
+                          {row.winner}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Analysis */}
+              <div style={{ marginTop: "20px", padding: "15px", background: "rgba(0,0,0,0.4)", borderRadius: "12px" }}>
+                <h4 style={{ color: "#FFD700", marginBottom: "10px" }}>📈 Performance Analysis</h4>
+                <p style={{ color: "#ddd", fontSize: "13px", lineHeight: "1.6" }}>
+                  • <strong>BFS Algorithm</strong> average time: <span style={{ color: "#FFD700" }}>{avgBfsTime} ms</span><br/>
+                  • <strong>DP Algorithm</strong> average time: <span style={{ color: "#4ade80" }}>{avgDpTime} ms</span><br/>
+                  • DP was faster in <strong>{dpFasterCount}</strong> out of <strong>{performanceData.length}</strong> rounds ({((dpFasterCount / performanceData.length) * 100).toFixed(0)}%)<br/>
+                  • Best BFS performance: <strong>{performanceStats?.bestBfsTime || 0} ms</strong> | Best DP performance: <strong>{performanceStats?.bestDpTime || 0} ms</strong><br/>
+                  <span style={{ display: "block", marginTop: "10px", paddingTop: "10px", borderTop: "1px solid rgba(255,255,255,0.2)" }}>
+                    <strong>💡 Conclusion:</strong> {
+                      parseFloat(avgBfsTime) < parseFloat(avgDpTime) 
+                        ? "BFS Algorithm performs better on average for this board configuration."
+                        : "DP Algorithm performs better on average for this board configuration."
+                    }
+                  </span>
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </div>
     );
@@ -854,12 +929,24 @@ export default function SnakeLadderGame() {
   return (
     <div ref={hubRef} style={{ background: "#050510", minHeight: "100vh", position: "relative", overflow: "hidden", fontFamily: "'Segoe UI', 'Poppins', sans-serif" }}>
       <canvas ref={canvasRef} style={{ position: "absolute", top: 0, left: 0, width: "100%", height: "100%", pointerEvents: "none" }} />
-      <PerformanceChart />
+      
+      {/* Performance Dashboard Modal */}
+      <PerformanceDashboard />
       
       <div style={{ position: "relative", zIndex: 1, padding: "1.5rem" }}>
-        <button onClick={() => navigate("/")} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "8px 16px", borderRadius: "20px", cursor: "pointer", fontSize: "13px", marginBottom: "1.5rem" }}>
-          ← Back
-        </button>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+          <button onClick={() => navigate("/")} style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.2)", color: "#fff", padding: "8px 16px", borderRadius: "20px", cursor: "pointer", fontSize: "13px" }}>
+            ← Back
+          </button>
+          {playerName && (
+            <button 
+              onClick={openPerformanceDashboard}
+              style={{ background: "rgba(55,138,221,0.8)", border: "none", padding: "8px 16px", borderRadius: "20px", color: "#fff", cursor: "pointer", fontSize: "13px" }}
+            >
+              📊 Performance Dashboard
+            </button>
+          )}
+        </div>
         
         <div style={{ textAlign: "center", marginBottom: "1.5rem" }}>
           <img src="https://png.pngtree.com/png-clipart/20240822/original/pngtree-lovable-green-snake-with-big-eyes-png-image_15828447.png" alt="Snake" style={{ width: "65px", height: "65px", marginBottom: "8px", filter: "drop-shadow(3px 5px 8px rgba(0,0,0,0.4)) drop-shadow(0 0 10px rgba(76,175,80,0.6))", animation: "float 3s ease-in-out infinite", cursor: "pointer" }} />
@@ -933,13 +1020,13 @@ export default function SnakeLadderGame() {
                 padding: "12px", 
                 borderRadius: "8px", 
                 border: "none", 
-                background: loading ? "rgba(7,61,46,0.6)" : "rgba(7,61,46,0.85)", 
+                background: loading ? "rgba(149, 218, 199, 0.6)" : "rgba(49, 146, 118, 0.85)", 
                 color: "#fff", 
                 fontSize: "14px", 
                 fontWeight: "bold", 
                 cursor: loading ? "not-allowed" : "pointer", 
                 opacity: loading ? 0.6 : 1, 
-                boxShadow: "0 4px 15px rgba(7,61,46,0.4)",
+                boxShadow: "0 4px 15px rgba(14, 106, 80, 0.4)",
                 transition: "all 0.3s ease"
               }}>
               {loading ? "Connecting..." : "Start Game"}
@@ -1054,7 +1141,7 @@ export default function SnakeLadderGame() {
           </div>
         )}
         
-        {/* RESULT SCREEN */}
+        {/* RESULT SCREEN - FIXED: Removed unnecessary /1000 division */}
         {gameState === "result" && (
           <div style={{ maxWidth: "350px", margin: "0 auto", textAlign: "center" }}>
             <div style={{ fontSize: "50px", marginBottom: "0.8rem" }}>🏆</div>
@@ -1065,23 +1152,23 @@ export default function SnakeLadderGame() {
               You reached the top! Great job!
             </p>
             
-            {/* Display times in milliseconds */}
-            {algo1TimeMicro !== null && algo2TimeMicro !== null && (
+            {/* Display times in milliseconds - FIXED: No division by 1000 */}
+            {algo1TimeMs !== null && algo2TimeMs !== null && (
               <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: "10px", padding: "0.8rem", marginBottom: "1rem", textAlign: "left" }}>
                 <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", marginBottom: "5px" }}>This Game's Performance</p>
                 <p style={{ color: "#fff", fontSize: "11px" }}>
-                  ⚡ BFS: <strong>{(algo1TimeMicro / 1000).toFixed(2)}ms</strong>
+                  ⚡ BFS: <strong>{algo1TimeMs.toFixed(3)}ms</strong>
                 </p>
                 <p style={{ color: "#fff", fontSize: "11px" }}>
-                  📊 Dynamic Programming: <strong>{(algo2TimeMicro / 1000).toFixed(2)}ms</strong>
+                  📊 Dynamic Programming: <strong>{algo2TimeMs.toFixed(3)}ms</strong>
                 </p>
                 <p style={{ color: "#4ade80", fontSize: "10px", marginTop: "5px" }}>
-                  {(algo1TimeMicro / 1000) <= (algo2TimeMicro / 1000) ? "🏆 BFS was faster" : "🏆 DP was faster"}
+                  {algo1TimeMs <= algo2TimeMs ? "🏆 BFS was faster" : "🏆 DP was faster"}
                 </p>
               </div>
             )}
             
-            <div style={{ display: "flex", gap: "8px" }}>
+            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
               <button 
                 onClick={resetGame} 
                 style={{ 
@@ -1095,6 +1182,20 @@ export default function SnakeLadderGame() {
                   cursor: "pointer" 
                 }}>
                 Play again
+              </button>
+              <button 
+                onClick={openPerformanceDashboard}
+                style={{ 
+                  flex: 1, 
+                  padding: "10px", 
+                  borderRadius: "8px", 
+                  border: "none", 
+                  background: "#378ADD", 
+                  color: "#fff", 
+                  fontSize: "12px", 
+                  cursor: "pointer" 
+                }}>
+                📊 View Performance
               </button>
               <button 
                 onClick={() => navigate("/")} 
@@ -1119,6 +1220,10 @@ export default function SnakeLadderGame() {
         @keyframes float { 
           0%, 100% { transform: translateY(0px); } 
           50% { transform: translateY(-8px); } 
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
         }
       `}</style>
     </div>
