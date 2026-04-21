@@ -1,17 +1,8 @@
-/*package com.dsagamehub.dto;
-
-public class SnakeLadderRequest {
-    private int boardSize;
-
-    public int getBoardSize() { return boardSize; }
-    public void setBoardSize(int boardSize) { this.boardSize = boardSize; }
-}*/
-
 package com.dsagamehub.dto;
 
 public class SnakeLadderRequest {
     private int boardSize;
-    private String playerName;  // Added for frontend
+    private String playerName;
 
     public int getBoardSize() { return boardSize; }
     public void setBoardSize(int boardSize) { this.boardSize = boardSize; }
