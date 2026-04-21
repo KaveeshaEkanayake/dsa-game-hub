@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -1020,13 +1021,13 @@ export default function SnakeLadderGame() {
                 padding: "12px", 
                 borderRadius: "8px", 
                 border: "none", 
-                background: loading ? "rgba(149, 218, 199, 0.6)" : "rgba(49, 146, 118, 0.85)", 
+                background: loading ? "rgba(7,61,46,0.6)" : "rgba(7,61,46,0.85)", 
                 color: "#fff", 
                 fontSize: "14px", 
                 fontWeight: "bold", 
                 cursor: loading ? "not-allowed" : "pointer", 
                 opacity: loading ? 0.6 : 1, 
-                boxShadow: "0 4px 15px rgba(14, 106, 80, 0.4)",
+                boxShadow: "0 4px 15px rgba(7,61,46,0.4)",
                 transition: "all 0.3s ease"
               }}>
               {loading ? "Connecting..." : "Start Game"}
@@ -1141,91 +1142,226 @@ export default function SnakeLadderGame() {
           </div>
         )}
         
-        {/* RESULT SCREEN - FIXED: Removed unnecessary /1000 division */}
+               {/* RESULT SCREEN - ENHANCED WIN SCREEN */}
         {gameState === "result" && (
-          <div style={{ maxWidth: "350px", margin: "0 auto", textAlign: "center" }}>
-            <div style={{ fontSize: "50px", marginBottom: "0.8rem" }}>🏆</div>
-            <h2 style={{ fontSize: "20px", fontWeight: 500, color: "#4ade80", marginBottom: "6px" }}>
-              Congratulations {playerName}!
+          <div style={{ 
+            maxWidth: "500px", 
+            margin: "0 auto", 
+            textAlign: "center",
+            background: "linear-gradient(135deg, rgba(76, 175, 80, 0.95), rgba(103, 58, 183, 0.95))",
+            borderRadius: "28px",
+            padding: "2rem",
+            backdropFilter: "blur(12px)",
+            border: "2px solid #FFD700",
+           
+            animation: "glow 2s ease-in-out infinite"
+          }}>
+            {/* Animated Trophy */}
+            <div style={{ 
+              fontSize: "85px", 
+              marginBottom: "0.5rem",
+              animation: "bounce 0.6s ease-in-out 3",
+              display: "inline-block",
+             
+            }}>
+              🏆
+            </div>
+            
+            {/* Confetti/Sparkle Effect */}
+            <div style={{
+              position: "relative",
+              marginBottom: "0.8rem"
+            }}>
+              <span style={{ fontSize: "28px", display: "inline-block", margin: "0 8px", animation: "float 0.5s ease-in-out infinite" }}>✨</span>
+              <span style={{ fontSize: "32px", display: "inline-block", margin: "0 8px", animation: "float 0.7s ease-in-out infinite 0.2s" }}>🎉</span>
+              <span style={{ fontSize: "28px", display: "inline-block", margin: "0 8px", animation: "float 0.6s ease-in-out infinite 0.4s" }}>✨</span>
+            </div>
+            
+            <h2 style={{ 
+              fontSize: "32px", 
+              fontWeight: "bold", 
+              background: "linear-gradient(135deg, #FFD700, #FFA500, #FF6347)",
+              WebkitBackgroundClip: "text",
+              backgroundClip: "text",
+              color: "transparent",
+              marginBottom: "10px",
+              letterSpacing: "2px"
+            }}>
+               WIN! 
             </h2>
-            <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "12px", marginBottom: "1rem" }}>
-              You reached the top! Great job!
+            
+            <p style={{ 
+              color: "rgba(255,255,255,0.95)", 
+              fontSize: "18px", 
+              marginBottom: "0.8rem",
+              fontWeight: "500"
+            }}>
+              Congratulations <strong style={{ color: "#FFD700", fontSize: "20px" }}>{playerName}</strong>!
             </p>
             
-            {/* Display times in milliseconds - FIXED: No division by 1000 */}
+            <p style={{ 
+              color: "rgba(255,255,255,0.7)", 
+              fontSize: "13px", 
+              marginBottom: "1.8rem",
+              borderBottom: "1px solid rgba(255,215,0,0.3)",
+              paddingBottom: "1.2rem"
+            }}>
+              You mastered the board and reached the top! 🎯
+            </p>
+            
+            {/* Game Statistics Section */}
+            <div style={{ 
+              background: "rgba(0,0,0,0.3)", 
+              borderRadius: "20px", 
+              padding: "1.2rem", 
+              marginBottom: "1.5rem", 
+              textAlign: "left",
+              border: "1px solid rgba(255,215,0,0.3)"
+            }}>
+              <p style={{ color: "#FFD700", fontSize: "13px", marginBottom: "12px", fontWeight: "bold", textAlign: "center", letterSpacing: "1px" }}>
+                📊 GAME STATISTICS
+              </p>
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "12px", padding: "8px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px", marginBottom: "4px" }}>Board Size</p>
+                  <p style={{ color: "#FFD700", fontSize: "20px", fontWeight: "bold" }}>{gameData?.boardSize}×{gameData?.boardSize}</p>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "12px", padding: "8px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px", marginBottom: "4px" }}>Minimum Dice Throws</p>
+                  <p style={{ color: "#4ade80", fontSize: "20px", fontWeight: "bold" }}>{gameData?.minimumDiceThrows}</p>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "12px", padding: "8px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px", marginBottom: "4px" }}>🐍 Snakes</p>
+                  <p style={{ color: "#FF8A80", fontSize: "20px", fontWeight: "bold" }}>{Object.keys(gameData?.snakes || {}).length}</p>
+                </div>
+                <div style={{ background: "rgba(255,255,255,0.1)", borderRadius: "12px", padding: "8px", textAlign: "center" }}>
+                  <p style={{ color: "rgba(255,255,255,0.7)", fontSize: "10px", marginBottom: "4px" }}>🪜 Ladders</p>
+                  <p style={{ color: "#FFD54F", fontSize: "20px", fontWeight: "bold" }}>{Object.keys(gameData?.ladders || {}).length}</p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Algorithm Performance Section */}
             {algo1TimeMs !== null && algo2TimeMs !== null && (
-              <div style={{ background: "rgba(255,255,255,0.07)", borderRadius: "10px", padding: "0.8rem", marginBottom: "1rem", textAlign: "left" }}>
-                <p style={{ color: "rgba(255,255,255,0.5)", fontSize: "10px", marginBottom: "5px" }}>This Game's Performance</p>
-                <p style={{ color: "#fff", fontSize: "11px" }}>
-                  ⚡ BFS: <strong>{algo1TimeMs.toFixed(3)}ms</strong>
+              <div style={{ 
+                background: "rgba(0,0,0,0.3)", 
+                borderRadius: "20px", 
+                padding: "1rem", 
+                marginBottom: "1.8rem", 
+                textAlign: "left",
+                border: "1px solid rgba(255,215,0,0.3)"
+              }}>
+                <p style={{ color: "#4ade80", fontSize: "12px", marginBottom: "10px", textAlign: "center", fontWeight: "bold", letterSpacing: "1px" }}>
+                  ⚡ ALGORITHM PERFORMANCE
                 </p>
-                <p style={{ color: "#fff", fontSize: "11px" }}>
-                  📊 Dynamic Programming: <strong>{algo2TimeMs.toFixed(3)}ms</strong>
-                </p>
-                <p style={{ color: "#4ade80", fontSize: "10px", marginTop: "5px" }}>
-                  {algo1TimeMs <= algo2TimeMs ? "🏆 BFS was faster" : "🏆 DP was faster"}
-                </p>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px", padding: "0 10px" }}>
+                  <span style={{ color: "#FFD700", fontSize: "13px", fontWeight: "500" }}>🔵 BFS Algorithm:</span>
+                  <span style={{ color: "#fff", fontSize: "16px", fontWeight: "bold" }}>{algo1TimeMs.toFixed(3)} ms</span>
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 10px" }}>
+                  <span style={{ color: "#4ade80", fontSize: "13px", fontWeight: "500" }}>🟢 DP Algorithm:</span>
+                  <span style={{ color: "#fff", fontSize: "16px", fontWeight: "bold" }}>{algo2TimeMs.toFixed(3)} ms</span>
+                </div>
+                <div style={{ 
+                  marginTop: "12px", 
+                  paddingTop: "10px", 
+                  borderTop: "1px solid rgba(255,255,255,0.15)",
+                  textAlign: "center"
+                }}>
+                  <span style={{ 
+                    color: algo1TimeMs <= algo2TimeMs ? "#FFD700" : "#4ade80", 
+                    fontSize: "12px",
+                    fontWeight: "bold",
+                    background: "rgba(0,0,0,0.3)",
+                    padding: "4px 12px",
+                    borderRadius: "20px"
+                  }}>
+                    {algo1TimeMs <= algo2TimeMs ? "🏆 BFS was faster for this board!" : "🏆 DP was faster for this board!"}
+                  </span>
+                </div>
               </div>
             )}
             
-            <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", justifyContent: "center" }}>
+            {/* Action Buttons */}
+            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap", justifyContent: "center" }}>
               <button 
                 onClick={resetGame} 
                 style={{ 
                   flex: 1, 
-                  padding: "10px", 
-                  borderRadius: "8px", 
-                  border: "1px solid rgba(255,255,255,0.2)", 
-                  background: "transparent", 
+                  minWidth: "120px",
+                  padding: "12px 18px", 
+                  borderRadius: "50px", 
+                  border: "1px solid rgba(255,215,0,0.5)", 
+                  background: "linear-gradient(135deg, #0ec017, #0bcf15)", 
                   color: "#fff", 
-                  fontSize: "12px", 
-                  cursor: "pointer" 
-                }}>
-                Play again
+                  fontSize: "13px", 
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+                onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; e.target.style.boxShadow = "0 5px 20px rgba(46,125,50,0.4)"; }}
+                onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; e.target.style.boxShadow = "none"; }}
+              >
+                🔄 Play Again
               </button>
               <button 
                 onClick={openPerformanceDashboard}
                 style={{ 
                   flex: 1, 
-                  padding: "10px", 
-                  borderRadius: "8px", 
+                  minWidth: "120px",
+                  padding: "12px 18px", 
+                  borderRadius: "50px", 
                   border: "none", 
-                  background: "#378ADD", 
+                  background: "linear-gradient(135deg, #1e88e5, #1565c0)", 
                   color: "#fff", 
-                  fontSize: "12px", 
-                  cursor: "pointer" 
-                }}>
+                  fontSize: "13px", 
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+                onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; e.target.style.boxShadow = "0 5px 20px rgba(30,136,229,0.4)"; }}
+                onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; e.target.style.boxShadow = "none"; }}
+              >
                 📊 View Performance
               </button>
               <button 
                 onClick={() => navigate("/")} 
                 style={{ 
                   flex: 1, 
-                  padding: "10px", 
-                  borderRadius: "8px", 
-                  border: "none", 
-                  background: "#185FA5", 
+                  minWidth: "120px",
+                  padding: "12px 18px", 
+                  borderRadius: "50px", 
+                  border: "1px solid rgba(255,255,255,0.2)", 
+                  background: "rgba(255,255,255,0.15)", 
                   color: "#fff", 
-                  fontSize: "12px", 
-                  cursor: "pointer" 
-                }}>
-                Back to hub
+                  fontSize: "13px", 
+                  fontWeight: "bold",
+                  cursor: "pointer",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px"
+                }}
+                onMouseEnter={(e) => { e.target.style.transform = "scale(1.05)"; e.target.style.background = "rgba(255,255,255,0.25)"; }}
+                onMouseLeave={(e) => { e.target.style.transform = "scale(1)"; e.target.style.background = "rgba(255,255,255,0.15)"; }}
+              >
+                🏠 Back to Hub
               </button>
             </div>
           </div>
         )}
       </div>
       
-      <style>{`
-        @keyframes float { 
-          0%, 100% { transform: translateY(0px); } 
-          50% { transform: translateY(-8px); } 
-        }
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
+      
     </div>
   );
 }
