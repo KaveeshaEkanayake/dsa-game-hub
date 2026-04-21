@@ -29,6 +29,8 @@ export default function TrafficSimulation() {
   const [ekTime, setEkTime] = useState(null);
   const [resultMessage, setResultMessage] = useState("");
   const [error, setError] = useState("");
+  const [showLeaderboard, setShowLeaderboard] = useState(false);
+  const [leaderboard, setLeaderboard] = useState([]);
 
   // ── galaxy starfield ──
   useEffect(() => {
@@ -519,3 +521,7 @@ export default function TrafficSimulation() {
     </div>
   );
 }
+
+
+
+
