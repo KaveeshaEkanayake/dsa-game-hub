@@ -105,7 +105,11 @@ export default function TrafficSimulation() {
       ctx.closePath(); ctx.fillStyle = "#f97316"; ctx.fill();
 
       const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
-      const ox = -Math.sin(angle) * 18, oy = Math.cos(angle) * 18;
+      const edgeKey = `${from}-${to}`;
+      const nudge = { "B-F": 28, "C-F": -28 };
+      const extraNudge = nudge[edgeKey] || 0;
+      const ox = -Math.sin(angle) * 18 + Math.cos(angle) * extraNudge;
+      const oy = Math.cos(angle) * 18 + Math.sin(angle) * extraNudge;
       const bx = mx + ox, by = my + oy;
       ctx.beginPath(); ctx.roundRect(bx - 15, by - 11, 30, 22, 5);
       ctx.fillStyle = "rgba(15,8,0,0.9)"; ctx.strokeStyle = "rgba(249,115,22,0.6)";
@@ -230,9 +234,9 @@ export default function TrafficSimulation() {
   };
 
   const resultConfig = {
-    win:  { emoji: "🏆", color: "#22c55e", label: "Correct! Well done!",    bg: "rgba(34,197,94,0.05)",  border: "rgba(34,197,94,0.2)"  },
+    win: { emoji: "🏆", color: "#22c55e", label: "Correct! Well done!", bg: "rgba(34,197,94,0.05)", border: "rgba(34,197,94,0.2)" },
     draw: { emoji: "🤝", color: "#f59e0b", label: "So Close! Almost there!", bg: "rgba(245,158,11,0.05)", border: "rgba(245,158,11,0.2)" },
-    lose: { emoji: "😞", color: "#ef4444", label: "Not quite right!",        bg: "rgba(239,68,68,0.05)",  border: "rgba(239,68,68,0.2)"  },
+    lose: { emoji: "😞", color: "#ef4444", label: "Not quite right!", bg: "rgba(239,68,68,0.05)", border: "rgba(239,68,68,0.2)" },
   };
 
   const CARD = { background: "rgba(255,255,255,0.03)", border: "1px solid rgba(249,115,22,0.2)", borderRadius: 20, padding: "1.75rem", position: "relative", overflow: "hidden", backdropFilter: "blur(8px)" };
@@ -259,7 +263,97 @@ export default function TrafficSimulation() {
         <button onClick={() => navigate("/")} style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "rgba(249,115,22,0.1)", border: "1px solid rgba(249,115,22,0.3)", color: "#fb923c", padding: "8px 16px", borderRadius: 99, cursor: "pointer", fontSize: 13, marginBottom: "2rem", fontFamily: "'Courier New', monospace" }}>← Back</button>
 
         <div style={{ textAlign: "center", marginBottom: "2.5rem" }}>
-          <div style={{ width: 64, height: 64, margin: "0 auto 16px", background: "rgba(249,115,22,0.12)", border: "1px solid rgba(249,115,22,0.4)", borderRadius: 18, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 30 }}>🚦</div>
+          <div style={{ display: "inline-block", margin: "0 auto 4px" }}>
+            <svg width="100" height="130" viewBox="0 0 100 130" style={{ overflow: "visible", display: "block" }}>
+              <defs>
+                <radialGradient id="icon-rg-red" cx="50%" cy="35%" r="55%"><stop offset="0%" stopColor="#ff6666" /><stop offset="100%" stopColor="#cc0011" /></radialGradient>
+                <radialGradient id="icon-rg-yellow" cx="50%" cy="35%" r="55%"><stop offset="0%" stopColor="#ffe066" /><stop offset="100%" stopColor="#cc9900" /></radialGradient>
+                <clipPath id="icon-road-clip"><rect x="0" y="92" width="100" height="38" /></clipPath>
+              </defs>
+              <circle cx="50" cy="52" r="38" fill="none" stroke="#f97316" strokeWidth="0.8" opacity="0.18" className="tl-ring1" />
+              <circle cx="50" cy="52" r="38" fill="none" stroke="#f97316" strokeWidth="0.8" opacity="0.18" className="tl-ring2" />
+              <circle cx="50" cy="52" r="38" fill="none" stroke="#f97316" strokeWidth="0.8" opacity="0.18" className="tl-ring3" />
+              <rect x="0" y="92" width="100" height="36" fill="#0f1e16" />
+              <rect x="0" y="92" width="100" height="2" fill="#1e3028" opacity="0.9" />
+              <g className="tl-stripe" clipPath="url(#icon-road-clip)">
+                {[-60, 0, 60, 120, 180].map(x => <rect key={x} x={x} y="108" width="40" height="4" rx="2" fill="#1e3a28" opacity="0.7" />)}
+              </g>
+              <line x1="0" y1="110" x2="100" y2="110" stroke="#1a2e22" strokeWidth="0.5" opacity="0.5" />
+              <g className="tl-car-a" style={{ transformOrigin: "50px 100px" }}>
+                <g transform="translate(50,100)">
+                  <ellipse cx="0" cy="3" rx="14" ry="3" fill="#000" opacity="0.3" />
+                  <rect x="-13" y="-5" width="26" height="9" rx="3" fill="#f97316" />
+                  <rect x="-5" y="-5" width="13" height="7" rx="1.5" fill="#1a4a2e" opacity="0.65" />
+                  <circle cx="-8" cy="4" r="2.5" fill="#0d1810" /><circle cx="-8" cy="4" r="1.2" fill="#334433" />
+                  <circle cx="8" cy="4" r="2.5" fill="#0d1810" /><circle cx="8" cy="4" r="1.2" fill="#334433" />
+                  <rect x="11" y="-3.5" width="3" height="2.5" rx="0.8" fill="#ffe566" opacity="0.9" />
+                  <rect x="11" y="1" width="3" height="2.5" rx="0.8" fill="#ffe566" opacity="0.9" />
+                  <rect x="-14" y="-2.5" width="2" height="2" rx="0.5" fill="#ff2244" opacity="0.8" />
+                  <rect x="-14" y="1" width="2" height="2" rx="0.5" fill="#ff2244" opacity="0.8" />
+                </g>
+              </g>
+              <g className="tl-car-b" style={{ transformOrigin: "50px 120px" }}>
+                <g transform="translate(50,120)">
+                  <ellipse cx="0" cy="3" rx="12" ry="2.8" fill="#000" opacity="0.28" />
+                  <rect x="-11" y="-4.5" width="22" height="8" rx="2.5" fill="#fbbf24" />
+                  <rect x="-4" y="-4.5" width="11" height="6" rx="1.5" fill="#1a3a2e" opacity="0.6" />
+                  <circle cx="-7" cy="3.5" r="2.2" fill="#0d1810" /><circle cx="-7" cy="3.5" r="1" fill="#334433" />
+                  <circle cx="7" cy="3.5" r="2.2" fill="#0d1810" /><circle cx="7" cy="3.5" r="1" fill="#334433" />
+                  <rect x="9.5" y="-3" width="2.5" height="2" rx="0.5" fill="#ffe566" opacity="0.9" />
+                  <rect x="9.5" y="1" width="2.5" height="2" rx="0.5" fill="#ffe566" opacity="0.9" />
+                  <rect x="-12" y="-2" width="2" height="1.8" rx="0.4" fill="#ff2244" opacity="0.8" />
+                  <rect x="-12" y="1" width="2" height="1.8" rx="0.4" fill="#ff2244" opacity="0.8" />
+                </g>
+              </g>
+              <g className="tl-car-c" style={{ transformOrigin: "50px 100px" }}>
+                <g transform="translate(50,100) scale(-1,1)">
+                  <ellipse cx="0" cy="3" rx="14" ry="3" fill="#000" opacity="0.28" />
+                  <rect x="-13" y="-5" width="26" height="9" rx="3" fill="#22c55e" />
+                  <rect x="-5" y="-5" width="13" height="7" rx="1.5" fill="#1a4a2e" opacity="0.6" />
+                  <circle cx="-8" cy="4" r="2.5" fill="#0d1810" /><circle cx="-8" cy="4" r="1.2" fill="#334433" />
+                  <circle cx="8" cy="4" r="2.5" fill="#0d1810" /><circle cx="8" cy="4" r="1.2" fill="#334433" />
+                  <rect x="11" y="-3.5" width="3" height="2.5" rx="0.8" fill="#ffe566" opacity="0.9" />
+                  <rect x="11" y="1" width="3" height="2.5" rx="0.8" fill="#ffe566" opacity="0.9" />
+                  <rect x="-14" y="-2.5" width="2" height="2" rx="0.5" fill="#ff2244" opacity="0.8" />
+                  <rect x="-14" y="1" width="2" height="2" rx="0.5" fill="#ff2244" opacity="0.8" />
+                </g>
+              </g>
+              <g className="tl-car-d" style={{ transformOrigin: "50px 120px" }}>
+                <g transform="translate(50,120) scale(-1,1)">
+                  <ellipse cx="0" cy="3" rx="12" ry="2.8" fill="#000" opacity="0.25" />
+                  <rect x="-11" y="-4.5" width="22" height="8" rx="2.5" fill="#60a5fa" />
+                  <rect x="-4" y="-4.5" width="11" height="6" rx="1.5" fill="#1a2a4e" opacity="0.55" />
+                  <circle cx="-7" cy="3.5" r="2.2" fill="#0d1810" /><circle cx="-7" cy="3.5" r="1" fill="#334433" />
+                  <circle cx="7" cy="3.5" r="2.2" fill="#0d1810" /><circle cx="7" cy="3.5" r="1" fill="#334433" />
+                  <rect x="9.5" y="-3" width="2.5" height="2" rx="0.5" fill="#ffe566" opacity="0.9" />
+                  <rect x="9.5" y="1" width="2.5" height="2" rx="0.5" fill="#ffe566" opacity="0.9" />
+                  <rect x="-12" y="-2" width="2" height="1.8" rx="0.4" fill="#ff2244" opacity="0.8" />
+                  <rect x="-12" y="1" width="2" height="1.8" rx="0.4" fill="#ff2244" opacity="0.8" />
+                </g>
+              </g>
+              <g className="tl-pole">
+                <rect x="47.5" y="75" width="5" height="20" rx="2.5" fill="#1a2e22" />
+                <rect x="31" y="8" width="38" height="70" rx="8" fill="#0d1c14" />
+                <rect x="31" y="8" width="38" height="70" rx="8" fill="none" stroke="#f97316" strokeWidth="1.2" opacity="0.45" />
+                <rect x="33" y="18" width="34" height="5" rx="2" fill="#0a1510" opacity="0.8" />
+                <rect x="33" y="39" width="34" height="5" rx="2" fill="#0a1510" opacity="0.8" />
+                <rect x="33" y="60" width="34" height="5" rx="2" fill="#0a1510" opacity="0.8" />
+                <circle cx="50" cy="24" r="10" fill="#1a0005" opacity="0.6" />
+                <circle cx="50" cy="45" r="10" fill="#1a1400" opacity="0.6" />
+                <circle cx="50" cy="66" r="10" fill="#001a08" opacity="0.6" />
+                <circle cx="50" cy="24" r="10" fill="url(#icon-rg-red)" style={{ animation: "tl-pulse-red 1s ease-in-out infinite" }} />
+                <circle cx="50" cy="45" r="10" fill="url(#icon-rg-yellow)" style={{ animation: "tl-pulse-yellow 1.4s ease-in-out infinite", animationDelay: "0.28s" }} />
+                <circle cx="50" cy="66" r="10" fill="#001a08" opacity="0.7" />
+                <circle cx="50" cy="24" r="16" fill="#ff1122" opacity="0" style={{ animation: "tl-glow-red 1s ease-in-out infinite" }} />
+                <circle cx="50" cy="45" r="16" fill="#ffcc00" opacity="0" style={{ animation: "tl-glow-yellow 1.4s ease-in-out infinite", animationDelay: "0.28s" }} />
+                <circle cx="45.5" cy="20" r="3" fill="#fff" opacity="0.2" />
+                <circle cx="45.5" cy="41" r="3" fill="#fff" opacity="0.16" />
+                <rect x="38" y="5" width="24" height="6" rx="3" fill="#0d1c14" stroke="#f97316" strokeWidth="0.8" opacity="0.75" />
+                <line x1="31" y1="35" x2="28" y2="35" stroke="#f97316" strokeWidth="1" opacity="0.25" />
+                <line x1="69" y1="35" x2="72" y2="35" stroke="#f97316" strokeWidth="1" opacity="0.25" />
+              </g>
+            </svg>
+          </div>
           <h1 style={{ fontSize: 30, fontWeight: 700, letterSpacing: "-0.5px", background: "linear-gradient(135deg,#f97316,#fbbf24)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent", fontFamily: "'Courier New', monospace" }}>Traffic Simulation</h1>
           <p style={{ fontSize: 14, color: "rgba(253,186,116,0.5)", marginTop: 6, fontFamily: "'Courier New', monospace" }}>Find the maximum vehicle flow from source A to sink T</p>
         </div>
@@ -334,7 +428,7 @@ export default function TrafficSimulation() {
                   {[["Ford-Fulkerson", ffTime], ["Edmonds-Karp", ekTime]].map(([name, t], i) => (
                     <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "9px 0", borderBottom: i === 0 ? "1px solid rgba(249,115,22,0.15)" : "none" }}>
                       <span style={{ fontSize: 13, color: "rgba(253,186,116,0.65)", fontFamily: "'Courier New', monospace" }}>{name}</span>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: "#f97316", fontFamily: "'Courier New', monospace" }}>{t != null ? `${t} ms` : "— ms"}</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: "#f97316", fontFamily: "'Courier New', monospace" }}>{t != null ? `${t} ns` : "— ns"}</span>
                     </div>
                   ))}
                 </div>
@@ -380,7 +474,7 @@ export default function TrafficSimulation() {
               {[["Ford-Fulkerson", ffTime], ["Edmonds-Karp", ekTime]].map(([name, t], i) => (
                 <div key={name} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderBottom: i === 0 ? "1px solid rgba(249,115,22,0.15)" : "none" }}>
                   <span style={{ fontSize: 13, color: "rgba(253,186,116,0.65)", fontFamily: "'Courier New', monospace" }}>{name}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: "#f97316", fontFamily: "'Courier New', monospace" }}>{t != null ? `${t} ms` : "—"}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: "#f97316", fontFamily: "'Courier New', monospace" }}>{t != null ? `${t} ns` : "—"}</span>
                 </div>
               ))}
               {ffTime != null && ekTime != null && (
@@ -401,6 +495,26 @@ export default function TrafficSimulation() {
         input[type=number]::-webkit-inner-spin-button, input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
         input[type=number] { -moz-appearance: textfield; }
         input::placeholder { color: rgba(253,186,116,0.25); }
+        @keyframes tl-pole-sway    { 0%,100%{transform:rotate(-0.8deg)} 50%{transform:rotate(0.8deg)} }
+        @keyframes tl-pulse-red    { 0%,100%{opacity:1} 50%{opacity:0.75} }
+        @keyframes tl-pulse-yellow { 0%,100%{opacity:1} 50%{opacity:0.72} }
+        @keyframes tl-glow-red     { 0%,100%{opacity:0.55} 50%{opacity:0.18} }
+        @keyframes tl-glow-yellow  { 0%,100%{opacity:0.45} 50%{opacity:0.12} }
+        @keyframes tl-ring         { 0%{r:38;opacity:0.45} 100%{r:58;opacity:0} }
+        @keyframes tl-car-a        { 0%{transform:translateX(-200px)} 100%{transform:translateX(200px)} }
+        @keyframes tl-car-b        { 0%{transform:translateX(-200px)} 100%{transform:translateX(200px)} }
+        @keyframes tl-car-c        { 0%{transform:translateX(200px)}  100%{transform:translateX(-200px)} }
+        @keyframes tl-car-d        { 0%{transform:translateX(200px)}  100%{transform:translateX(-200px)} }
+        @keyframes tl-stripe       { 0%{transform:translateX(0)} 100%{transform:translateX(-60px)} }
+        .tl-pole   { transform-origin:50px 80px; animation:tl-pole-sway 4s ease-in-out infinite; }
+        .tl-car-a  { animation:tl-car-a 3.2s linear infinite; }
+        .tl-car-b  { animation:tl-car-b 4.6s linear infinite; animation-delay:-2s; }
+        .tl-car-c  { animation:tl-car-c 3.9s linear infinite; animation-delay:-1s; }
+        .tl-car-d  { animation:tl-car-d 5.1s linear infinite; animation-delay:-2.8s; }
+        .tl-stripe { animation:tl-stripe 0.7s linear infinite; }
+        .tl-ring1  { animation:tl-ring 1.8s ease-out infinite; }
+        .tl-ring2  { animation:tl-ring 1.8s ease-out infinite; animation-delay:0.6s; }
+        .tl-ring3  { animation:tl-ring 1.8s ease-out infinite; animation-delay:1.2s; }
       `}</style>
     </div>
   );
