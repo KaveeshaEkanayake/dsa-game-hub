@@ -27,6 +27,9 @@ public class KnightTourService {
         List<int[]> solution1 = warnsdorff(boardSize, startRow, startCol);
         long algo1Time = System.currentTimeMillis() - start1;
 
+        // Ensure at least 1ms recorded
+        if (algo1Time == 0) algo1Time = 1;
+
         // Algorithm 2 — Backtracking (Recursive, 8x8 only, 5 second timeout)
         long algo2Time = 0;
         if (boardSize == 8) {
@@ -47,6 +50,7 @@ public class KnightTourService {
                 executor.shutdownNow();
             }
             algo2Time = System.currentTimeMillis() - start2;
+            if (algo2Time == 0) algo2Time = 1;
         }
 
         Map<String, Object> response = new HashMap<>();
@@ -62,31 +66,27 @@ public class KnightTourService {
 
     public Map<String, Object> submitAnswer(Map<String, Object> request) {
         String playerName = (String) request.get("playerName");
-        int boardSize = (Integer) request.get("boardSize");
-        int startRow = (Integer) request.get("startRow");
-        int startCol = (Integer) request.get("startCol");
-        String playerAnswer = (String) request.get("playerAnswer");
+        int boardSize = ((Number) request.get("boardSize")).intValue();
+        int startRow = ((Number) request.get("startRow")).intValue();
+        int startCol = ((Number) request.get("startCol")).intValue();
+        String playerAnswer = request.get("playerAnswer").toString();
 
-        // Get algo times sent from frontend
-        long algo1TimeMs = 0L;
-        long algo2TimeMs = 0L;
-        if (request.get("algo1TimeMs") != null) {
-            algo1TimeMs = ((Number) request.get("algo1TimeMs")).longValue();
-        }
-        if (request.get("algo2TimeMs") != null) {
-            algo2TimeMs = ((Number) request.get("algo2TimeMs")).longValue();
-        }
+        long algo1TimeMs = request.get("algo1TimeMs") != null ?
+                ((Number) request.get("algo1TimeMs")).longValue() : 0L;
+        long algo2TimeMs = request.get("algo2TimeMs") != null ?
+                ((Number) request.get("algo2TimeMs")).longValue() : 0L;
 
         int correctAnswer = boardSize * boardSize;
         boolean isCorrect = playerAnswer.trim().equals(String.valueOf(correctAnswer));
 
-        // Always save to DB (both correct and incorrect) for timing data
+        // Save to DB
         KnightTourResult result = new KnightTourResult();
-        result.setPlayerName(playerName);
+        result.setPlayerName(playerName.trim());
         result.setBoardSize(boardSize);
         result.setStartRow(startRow);
         result.setStartCol(startCol);
         result.setCorrect(isCorrect);
+        result.setGameResult(isCorrect ? "win" : "lose");
         result.setAlgorithm1TimeMs(algo1TimeMs);
         result.setAlgorithm2TimeMs(algo2TimeMs);
         knightTourRepository.save(result);
@@ -95,6 +95,78 @@ public class KnightTourService {
         response.put("correct", isCorrect);
         response.put("correctAnswer", correctAnswer);
         response.put("playerName", playerName);
+        response.put("gameResult", isCorrect ? "win" : "lose");
+        response.put("algo1TimeMs", algo1TimeMs);
+        response.put("algo2TimeMs", algo2TimeMs);
+        return response;
+    }
+
+    public Map<String, Object> recordDraw(Map<String, Object> request) {
+        String playerName = (String) request.get("playerName");
+        int boardSize = request.get("boardSize") != null ?
+                ((Number) request.get("boardSize")).intValue() : 8;
+        int startRow = request.get("startRow") != null ?
+                ((Number) request.get("startRow")).intValue() : 0;
+        int startCol = request.get("startCol") != null ?
+                ((Number) request.get("startCol")).intValue() : 0;
+
+        long algo1TimeMs = request.get("algo1TimeMs") != null ?
+                ((Number) request.get("algo1TimeMs")).longValue() : 0L;
+        long algo2TimeMs = request.get("algo2TimeMs") != null ?
+                ((Number) request.get("algo2TimeMs")).longValue() : 0L;
+
+        KnightTourResult result = new KnightTourResult();
+        result.setPlayerName(playerName.trim());
+        result.setBoardSize(boardSize);
+        result.setStartRow(startRow);
+        result.setStartCol(startCol);
+        result.setCorrect(false);
+        result.setGameResult("draw");
+        result.setAlgorithm1TimeMs(algo1TimeMs);
+        result.setAlgorithm2TimeMs(algo2TimeMs);
+        knightTourRepository.save(result);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("gameResult", "draw");
+        response.put("playerName", playerName);
+        response.put("correctAnswer", boardSize * boardSize);
+        return response;
+    }
+
+    public List<Map<String, Object>> getLeaderboard() {
+        List<KnightTourResult> correctResults = knightTourRepository.findTopCorrectResults();
+        List<Map<String, Object>> leaderboard = new ArrayList<>();
+
+        for (KnightTourResult r : correctResults) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("playerName", r.getPlayerName());
+            entry.put("boardSize", r.getBoardSize());
+            entry.put("algo1TimeMs", r.getAlgorithm1TimeMs());
+            entry.put("algo2TimeMs", r.getAlgorithm2TimeMs());
+            entry.put("createdAt", r.getCreatedAt());
+            leaderboard.add(entry);
+        }
+        return leaderboard;
+    }
+
+    public List<Map<String, Object>> getAllResults() {
+        List<KnightTourResult> results = knightTourRepository.findAllOrderByCreatedAtDesc();
+        List<Map<String, Object>> response = new ArrayList<>();
+
+        for (KnightTourResult r : results) {
+            Map<String, Object> entry = new HashMap<>();
+            entry.put("id", r.getId());
+            entry.put("playerName", r.getPlayerName());
+            entry.put("boardSize", r.getBoardSize());
+            entry.put("startRow", r.getStartRow());
+            entry.put("startCol", r.getStartCol());
+            entry.put("correct", r.isCorrect());
+            entry.put("gameResult", r.getGameResult());
+            entry.put("algo1TimeMs", r.getAlgorithm1TimeMs());
+            entry.put("algo2TimeMs", r.getAlgorithm2TimeMs());
+            entry.put("createdAt", r.getCreatedAt());
+            response.add(entry);
+        }
         return response;
     }
 
@@ -142,7 +214,8 @@ public class KnightTourService {
         return count;
     }
 
-    private boolean backtrack(int[][] board, int row, int col, int moveNum, int size, List<int[]> path) {
+    private boolean backtrack(int[][] board, int row, int col, int moveNum,
+                              int size, List<int[]> path) {
         if (Thread.currentThread().isInterrupted()) return false;
         board[row][col] = moveNum;
         path.add(new int[]{row, col});
