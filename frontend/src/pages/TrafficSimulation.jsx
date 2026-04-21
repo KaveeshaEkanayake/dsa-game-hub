@@ -802,7 +802,7 @@ export default function TrafficSimulation() {
 
   const fetchLeaderboard = async () => {
     try {
-      const res = await fetch(`${API_URL} / api / traffic / leaderboard`);
+      const res = await fetch(`${API_URL}/api/traffic/leaderboard`);
       const data = await res.json();
       setLeaderboard(data);
       setShowLeaderboard(true);
