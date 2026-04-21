@@ -33,7 +33,6 @@ class SnakeLadderServiceTest {
         validRequest.setBoardSize(8);
         validRequest.setPlayerName("TestPlayer");
 
-        // No unnecessary stubbings here - mock will be used only when needed
     }
 
     // Test 1: Board size validation
@@ -367,7 +366,7 @@ class SnakeLadderServiceTest {
 
         assertTrue(response.isSuccess());
         assertTrue(response.isCorrect());
-        assertTrue(response.getMessage().contains("✅ Correct"));
+        assertTrue(response.getMessage().contains("Correct"));
     }
 
     // Test 18: Invalid answer submission (wrong answer)
@@ -391,6 +390,6 @@ class SnakeLadderServiceTest {
 
         assertTrue(response.isSuccess());
         assertFalse(response.isCorrect());
-        assertTrue(response.getMessage().contains("❌ Incorrect"));
+        assertTrue(response.getMessage().contains("Incorrect"));
     }
 }

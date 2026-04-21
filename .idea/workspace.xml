@@ -5,51 +5,37 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="75629190-ea09-44f8-8fca-cc7c9d058468" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/.vscode/settings.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderAnswerRequest.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderApiResponse.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/service/TrafficgameEdmondKarp.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/service/TrafficgameFordFulkerson.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/analyze-sixteen-queens-complexity.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/generate-sixteen-queens-charts.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/selenium-sixteen-queens.test.js" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/test-output/algorithm-chart.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/test-output/round-chart.png" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/test-output/sixteen-queens-complexity-report.json" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/frontend/test-output/sixteen-queens-complexity-report.txt" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/pom.xml" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/pom.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/controller/SixteenQueensController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/controller/SixteenQueensController.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/controller/SnakeLadderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/controller/SnakeLadderController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/ApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/ApiResponse.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/PlayerAnswerRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/PlayerAnswerRequest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/AlgorithmRun.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/AlgorithmRun.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/GameRound.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/GameRound.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/PlayerAnswer.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/PlayerAnswer.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/AlgorithmRunRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/AlgorithmRunRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/GameRoundRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/GameRoundRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/PlayerAnswerRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/PlayerAnswerRepository.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/service/SixteenQueensGameService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/service/SixteenQueensGameService.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderAnswerRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderAnswerRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderApiResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderRequest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderResponse.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/SnakeLadderGameResult.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/model/SnakeLadderGameResult.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/SnakeLadderRepository.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/repository/SnakeLadderRepository.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/service/SnakeLadderService.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/service/SnakeLadderService.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/test/java/com/dsagamehub/service/SixteenQueensGameServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/test/java/com/dsagamehub/service/SixteenQueensGameServiceTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/test/java/com/dsagamehub/service/SnakeLadderServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/test/java/com/dsagamehub/service/SnakeLadderServiceTest.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/App.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/App.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/pages/SixteenQueens.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/SixteenQueens.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder1.jsx" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/routes/AppRoutes.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/routes/AppRoutes.jsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/services/api.js" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/services/api.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend/src/styles/Sixteen_queen_puzzle.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles/Sixteen_queen_puzzle.css" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend/src/styles/SnakeLadder1.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles/SnakeLadder1.css" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
   <component name="Git.Settings">
+    <option name="RECENT_BRANCH_BY_REPOSITORY">
+      <map>
+        <entry key="$PROJECT_DIR$" value="development" />
+      </map>
+    </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
   <component name="ProjectColorInfo">{
@@ -63,6 +49,8 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "Application.DsagamehubApplication.executor": "Run",
+    "JUnit.SnakeLadderServiceTest.executor": "Run",
     "RequestMappingsPanelOrder0": "0",
     "RequestMappingsPanelOrder1": "1",
     "RequestMappingsPanelWidth0": "75",
@@ -73,7 +61,7 @@
     "RunOnceActivity.typescript.service.memoryLimit.init": "true",
     "Spring Boot.DsagamehubApplication.executor": "Run",
     "codeWithMe.voiceChat.enabledByDefault": "false",
-    "git-widget-placeholder": "Merging feature/snake-ladder",
+    "git-widget-placeholder": "feature/snake-ladder",
     "kotlin-language-version-configured": "true",
     "vue.rearranger.settings.migration": "true"
   }
