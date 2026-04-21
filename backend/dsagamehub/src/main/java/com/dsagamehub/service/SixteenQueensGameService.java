@@ -184,7 +184,9 @@ public class SixteenQueensGameService {
                 threadedCheckTimeNs,
                 totalCheckTimeNs,
                 bestAlgorithm,
-                comparisonMessage
+                comparisonMessage,
+                true,
+                true
         );
         playerAnswerRepository.save(correctAnswer);
 
