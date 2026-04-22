@@ -6,6 +6,9 @@
   <component name="ChangeListManager">
     <list default="true" id="75629190-ea09-44f8-8fca-cc7c9d058468" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+
+      <change beforePath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder.jsx" afterDir="false" />
+
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/controller/SnakeLadderController.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/controller/SnakeLadderController.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderAnswerRequest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderAnswerRequest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderApiResponse.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/main/java/com/dsagamehub/dto/SnakeLadderApiResponse.java" afterDir="false" />
@@ -17,6 +20,7 @@
       <change beforePath="$PROJECT_DIR$/backend/dsagamehub/src/test/java/com/dsagamehub/service/SnakeLadderServiceTest.java" beforeDir="false" afterPath="$PROJECT_DIR$/backend/dsagamehub/src/test/java/com/dsagamehub/service/SnakeLadderServiceTest.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder.jsx" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/pages/SnakeLadder.jsx" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend/src/styles/SnakeLadder1.css" beforeDir="false" afterPath="$PROJECT_DIR$/frontend/src/styles/SnakeLadder1.css" afterDir="false" />
+
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -47,6 +51,25 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
+
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Application.DsagamehubApplication.executor&quot;: &quot;Run&quot;,
+    &quot;JUnit.SnakeLadderServiceTest.executor&quot;: &quot;Run&quot;,
+    &quot;RequestMappingsPanelOrder0&quot;: &quot;0&quot;,
+    &quot;RequestMappingsPanelOrder1&quot;: &quot;1&quot;,
+    &quot;RequestMappingsPanelWidth0&quot;: &quot;75&quot;,
+    &quot;RequestMappingsPanelWidth1&quot;: &quot;75&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.TerminalTabsStorage.copyFrom.TerminalArrangementManager.252&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.typescript.service.memoryLimit.init&quot;: &quot;true&quot;,
+    &quot;Spring Boot.DsagamehubApplication.executor&quot;: &quot;Run&quot;,
+    &quot;codeWithMe.voiceChat.enabledByDefault&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;feature/snake-ladder&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
+
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
     "Application.DsagamehubApplication.executor": "Run",
@@ -64,6 +87,7 @@
     "git-widget-placeholder": "feature/snake-ladder",
     "kotlin-language-version-configured": "true",
     "vue.rearranger.settings.migration": "true"
+
   }
 }]]></component>
   <component name="TaskManager">
