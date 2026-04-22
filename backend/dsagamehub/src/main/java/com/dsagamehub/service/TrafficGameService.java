@@ -40,21 +40,58 @@ public class TrafficGameService {
             new String[]{"H", "T"}
     );
 
+//    public TrafficGameResponse generateNewRound() {
+//        try {
+//            List<TrafficEdge> edges = generateRandomEdges();
+//
+//            long ffStart = System.currentTimeMillis();
+//            int ffMaxFlow = fordFulkersonService.computeMaxFlow(edges);
+//            long ffTime = System.currentTimeMillis() - ffStart;
+//
+//            long ekStart = System.currentTimeMillis();
+//            int ekMaxFlow = edmondsKarpService.computeMaxFlow(edges);
+//            long ekTime = System.currentTimeMillis() - ekStart;
+//
+//            if (ffMaxFlow != ekMaxFlow) {
+//                throw TrafficGameException.algorithmFailure();
+//            }
+//
+//            TrafficGameRound round = new TrafficGameRound(ffMaxFlow, ffTime, ekTime);
+//            round = roundRepository.save(round);
+//
+//            for (TrafficEdge edge : edges) {
+//                edge.setRoundId(round.getId());
+//            }
+//
+//            Map<String, Integer> capacities = buildCapacityMap(edges);
+//
+//            TrafficGameResponse response = new TrafficGameResponse(
+//                    round.getId(), edges, capacities, ffMaxFlow, ffTime, ekTime
+//            );
+//
+//            return response;
+//
+//        } catch (TrafficGameException e) {
+//            throw e;
+//        } catch (Exception e) {
+//            throw new TrafficGameException("Failed to generate new game round: " + e.getMessage());
+//        }
+//    }
+
     public TrafficGameResponse generateNewRound() {
         try {
             List<TrafficEdge> edges = generateRandomEdges();
 
-            long ffStart = System.currentTimeMillis();
+            // Use the proper benchmark methods
             int ffMaxFlow = fordFulkersonService.computeMaxFlow(edges);
-            long ffTime = System.currentTimeMillis() - ffStart;
-
-            long ekStart = System.currentTimeMillis();
             int ekMaxFlow = edmondsKarpService.computeMaxFlow(edges);
-            long ekTime = System.currentTimeMillis() - ekStart;
 
             if (ffMaxFlow != ekMaxFlow) {
                 throw TrafficGameException.algorithmFailure();
             }
+
+            long ffTime = fordFulkersonService.measureTime(edges);  // now in nanoseconds
+            long ekTime = edmondsKarpService.measureTime(edges);    // now in nanoseconds
 
             TrafficGameRound round = new TrafficGameRound(ffMaxFlow, ffTime, ekTime);
             round = roundRepository.save(round);
@@ -65,11 +102,9 @@ public class TrafficGameService {
 
             Map<String, Integer> capacities = buildCapacityMap(edges);
 
-            TrafficGameResponse response = new TrafficGameResponse(
+            return new TrafficGameResponse(
                     round.getId(), edges, capacities, ffMaxFlow, ffTime, ekTime
             );
-
-            return response;
 
         } catch (TrafficGameException e) {
             throw e;
@@ -149,6 +184,10 @@ public class TrafficGameService {
         }
 
         return edges;
+    }
+
+    public List<TrafficGameResult> getLeaderboard() {
+        return resultRepository.findAllByOrderByIsCorrectDescCreatedAtDesc();
     }
 
     private Map<String, Integer> buildCapacityMap(List<TrafficEdge> edges) {
