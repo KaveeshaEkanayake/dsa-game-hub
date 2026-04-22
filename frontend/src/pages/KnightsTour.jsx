@@ -301,6 +301,7 @@ export default function KnightsTour() {
                 <div>
                   <h2 style={{ color: "#fff", fontSize: "20px", fontWeight: 500 }}>📊 Algorithm Performance Dashboard</h2>
                   <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px", marginTop: "4px" }}>All {dashboardData.length} game rounds</p>
+                  </div>
                 <button onClick={() => setShowDashboard(false)} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "20px", cursor: "pointer" }}>✕</button>
               </div>
 
