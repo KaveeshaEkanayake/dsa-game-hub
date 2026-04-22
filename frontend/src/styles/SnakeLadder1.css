@@ -1,0 +1,313 @@
+
+.snake-ladder-container 
+.snake-ladder1-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a472a, #0d2818);
+  padding: 20px;
+}
+
+.setup-screen {
+  max-width: 600px;
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  text-align: center;
+}
+
+.setup-screen h1 {
+  color: #2c5f2d;
+  margin-bottom: 30px;
+}
+
+.setup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.name-input {
+  padding: 12px;
+  font-size: 16px;
+  border: 2px solid #ddd;
+  border-radius: 10px;
+}
+
+.board-size-selector {
+  text-align: left;
+}
+
+.board-size-selector input {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.start-btn {
+  padding: 15px;
+  font-size: 18px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.rules {
+  margin-top: 30px;
+  text-align: left;
+  background: #f0f0f0;
+  padding: 20px;
+  border-radius: 10px;
+}
+
+.rules ul {
+  margin-top: 10px;
+  padding-left: 20px;
+}
+
+.rules li {
+  margin: 8px 0;
+}
+
+.game-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 15px;
+  padding: 15px 25px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.game-header h1 {
+  margin: 0;
+  color: #2c5f2d;
+}
+
+.player-info {
+  display: flex;
+  gap: 20px;
+  font-weight: bold;
+}
+
+.game-main {
+  display: flex;
+  gap: 30px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.board-wrapper {
+  background: #f5e6ca;
+  padding: 20px;
+  border-radius: 15px;
+  border: 4px solid #c4a35a;
+}
+
+.board-grid {
+  display: grid;
+  gap: 2px;
+  background-color: #c4a35a;
+}
+
+.board-cell {
+  width: 60px;
+  height: 60px;
+  background-color: #fff8f0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 12px;
+  font-weight: bold;
+  transition: all 0.2s;
+}
+
+@media (max-width: 700px) {
+  .board-cell {
+    width: 40px;
+    height: 40px;
+  }
+}
+
+@media (max-width: 500px) {
+  .board-cell {
+    width: 30px;
+    height: 30px;
+  }
+}
+
+.board-cell.snake {
+  background: linear-gradient(135deg, #ffcccc, #ff9999);
+}
+
+.board-cell.ladder {
+  background: linear-gradient(135deg, #ccffcc, #99ff99);
+}
+
+.board-cell.player {
+  background: linear-gradient(135deg, #ffe066, #ffcc00);
+}
+
+.cell-number {
+  font-size: 11px;
+  color: #8b6914;
+}
+
+.cell-icon {
+  font-size: 10px;
+}
+
+.player-token {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 16px;
+}
+
+.game-sidebar {
+  width: 280px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.dice-section {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 20px;
+  border-radius: 15px;
+  text-align: center;
+}
+
+.dice {
+  width: 80px;
+  height: 80px;
+  background: white;
+  border: 3px solid #333;
+  border-radius: 15px;
+  margin: 0 auto 15px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  font-weight: bold;
+}
+
+.dice.rolling {
+  animation: rollDice 0.1s linear infinite;
+}
+
+@keyframes rollDice {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.roll-btn {
+  padding: 12px 20px;
+  font-size: 16px;
+  background: #ff6b6b;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.roll-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.message-box {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.move-history {
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 15px;
+  border-radius: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.move-history h3 {
+  margin-bottom: 10px;
+}
+
+.history-item {
+  padding: 5px;
+  border-bottom: 1px solid #444;
+  font-size: 12px;
+}
+
+.quit-btn {
+  padding: 12px;
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.question-modal, .result-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.9);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.question-card, .result-card {
+  background: white;
+  padding: 40px;
+  border-radius: 20px;
+  text-align: center;
+  max-width: 450px;
+}
+
+.question-options {
+  display: flex;
+  gap: 15px;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.option-btn {
+  padding: 12px 25px;
+  font-size: 16px;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.result-card.win {
+  background: linear-gradient(135deg, #d4edda, #c3e6cb);
+}
+
+.result-card.lose {
+  background: linear-gradient(135deg, #f8d7da, #f5c6cb);
+}
+
+.play-again-btn {
+  margin-top: 20px;
+  padding: 10px 30px;
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+}
+/* 

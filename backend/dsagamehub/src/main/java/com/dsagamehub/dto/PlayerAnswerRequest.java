@@ -1,0 +1,31 @@
+package com.dsagamehub.dto;
+
+import jakarta.validation.constraints.NotBlank;
+
+public class PlayerAnswerRequest {
+
+    @NotBlank(message = "Player name is required")
+    private String playerName;
+
+    @NotBlank(message = "Answer is required")
+    private String answerText;
+
+    public PlayerAnswerRequest() {
+    }
+
+    public String getPlayerName() {
+        return playerName;
+    }
+
+    public void setPlayerName(String playerName) {
+        this.playerName = playerName;
+    }
+
+    public String getAnswerText() {
+        return answerText;
+    }
+
+    public void setAnswerText(String answerText) {
+        this.answerText = answerText;
+    }
+}
