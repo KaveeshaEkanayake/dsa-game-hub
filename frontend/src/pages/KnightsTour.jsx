@@ -190,7 +190,7 @@ export default function KnightsTour() {
     try {
       const res = await fetch(`${API_URL}/api/knights-tour/results`);
       const data = await res.json();
-      setDashboardData(data.slice(0, 20));
+      setDashboardData(data);
       setShowDashboard(true);
     } catch {
       alert("Could not fetch dashboard data!");
@@ -300,8 +300,7 @@ export default function KnightsTour() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
                 <div>
                   <h2 style={{ color: "#fff", fontSize: "20px", fontWeight: 500 }}>📊 Algorithm Performance Dashboard</h2>
-                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px", marginTop: "4px" }}>Last {dashboardData.length} game rounds</p>
-                </div>
+                  <p style={{ color: "rgba(255,255,255,0.4)", fontSize: "12px", marginTop: "4px" }}>All {dashboardData.length} game rounds</p>
                 <button onClick={() => setShowDashboard(false)} style={{ background: "transparent", border: "none", color: "rgba(255,255,255,0.5)", fontSize: "20px", cursor: "pointer" }}>✕</button>
               </div>
 
